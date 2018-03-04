@@ -20,7 +20,7 @@ class Video(object):
         self.filename = filename
 
 
-    def split(self):
+    def __split(self):
         videoSource = cv2.VideoCapture('dataset/videos/'+self.filename)
         success,image = videoSource.read() #success is true if file exist, and loads first frame in image
         count = 0
@@ -40,7 +40,7 @@ class Video(object):
 
         dir = os.path.splitext("dataset/" + self.filename)[0]  # gets the directory location
         if os.path.isdir(dir) is False:
-            self.split()
+            self.__split()
 
         count = len(os.listdir(dir)) #count list of files inside directory
 
