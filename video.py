@@ -21,6 +21,8 @@ class Video(object):
 
 
     def __split(self):
+        if os.path.exists('dataset/videos/'+self.filename) is False:
+            raise ValueError("Video File Not Found")
         videoSource = cv2.VideoCapture('dataset/videos/'+self.filename)
         success,image = videoSource.read() #success is true if file exist, and loads first frame in image
         count = 0
