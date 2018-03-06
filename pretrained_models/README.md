@@ -1,0 +1,1 @@
+Place all of the pretrained C3D models in this directory.
