@@ -124,7 +124,7 @@ class dataset:
                 vid = Video(filename,anomaly)
                 self.video.append(vid)
 
-            numpy.random.shuffle(self.video)
+            #numpy.random.shuffle(self.video)
             training = []
             train_length = int(len(self.video)*.8)
 
