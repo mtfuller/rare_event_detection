@@ -2,4 +2,4 @@ from model import Model
 import numpy as np
 
 model = Model()
-model.run()
+model.build()

@@ -5,8 +5,6 @@ import tensorflow as tf
 import time
 from tensorflow.contrib import layers
 import numpy as np
-import cv2
-import matplotlib.pyplot as plt
 
 labels = [
 	"ApplyEyeMakeup",
@@ -112,24 +110,6 @@ labels = [
 	"YoYo",
 ]
 
-video = cv2.VideoCapture("./vid/test2.avi")
-
-ret, frame = video.read()
-frame = cv2.resize(frame, dsize=(112, 112), interpolation=cv2.INTER_CUBIC)
-print(frame.shape)
-st_video = np.array([frame])
-print("LOADING VIDEO...")
-count = 0
-while video.isOpened():
-    count += 1
-    ret, frame = video.read()
-    frame = cv2.resize(frame, dsize=(112, 112), interpolation=cv2.INTER_CUBIC)
-    if not ret or count >= 10:
-        break
-    st_video = np.vstack((st_video, [frame]))
-print("LOADED")
-print(st_video.shape)
-
 PRETRAINED_MODEL_PATH = "./pretrained_models/c3d_ucf101_finetune_whole_iter_20000_TF.model"
 
 class Model:
@@ -158,12 +138,12 @@ class Model:
 
         with self.__graph.as_default():
             self.inputs = tf.placeholder(tf.float32, [None, self.__CLIP_LENGTH, self.__CROP_HEIGHT, self.__CROP_WIDTH, 3])
-            self.__nn = self.inputs
+            self.cnn_model = self.inputs
             self.initializer = layers.xavier_initializer()
             self.global_step = tf.Variable(0, trainable=False, name="global_step")
             self.lr = tf.train.exponential_decay(1e-4, self.global_step, int(10 * self.n_step_epoch), 1e-1, True)
 
-    def run(self):
+    def predict(self, sample_segment):
         with self.__graph.as_default():
             config = tf.ConfigProto()
             with tf.Session(config=config, graph=self.__graph) as sess:
@@ -195,17 +175,18 @@ class Model:
                 saver.restore(sess, PRETRAINED_MODEL_PATH)
                 print("Model Loading Done!")
                 print("INPUT SHAPE: "+ str(self.inputs.shape))
-                print("OUTPUT SHAPE: "+ str(self.__nn.shape))
-                print("VIDEO SHAPE:" + str(np.array([st_video]).shape))
-                softmax_logits = tf.argmax(tf.nn.softmax(self.__nn), axis=1)
+                print("OUTPUT SHAPE: " + str(self.cnn_model.shape))
+                print("VIDEO SHAPE:" + str(np.array([sample_segment]).shape))
+                softmax_logits = tf.argmax(tf.nn.softmax(self.cnn_model), axis=1)
                 start = time.time()
-                output = sess.run(softmax_logits, feed_dict={self.inputs: [st_video]})
+                output = sess.run(softmax_logits, feed_dict={self.inputs: [sample_segment]})
                 end = time.time()
                 print("FINISHED!!!")
                 print(end-start)
                 print(output)
                 print([labels[o] for o in output])
                 print(output.shape)
+                return output
 
     def saveModel(self):
         pass
@@ -235,7 +216,7 @@ class Model:
         self.__fc('fc2', [4096, 4096], 'wd2', 'bd2')
         self.__dropout('dropout2', self.dropout_prob)
         self.__fc('fc3', [4096, self.num_class], 'wout', 'bout', False)
-        print("OUTPUT SHAPE: " + str(self.__nn.shape))
+        print("OUTPUT SHAPE: " + str(self.cnn_model.shape))
 
         # Loss Function MIL
         # L = l(B_a, B_n) + NORM(M)
@@ -251,13 +232,13 @@ class Model:
             b = tf.get_variable(name=b_name, shape=dim[-1], initializer=tf.zeros_initializer(), dtype=tf.float32)
             tf.add_to_collection(tf.GraphKeys.WEIGHTS, W)
             tf.add_to_collection(tf.GraphKeys.BIASES, b)
-        self.__nn = tf.nn.conv3d(self.__nn, W, strides=[1, 1, 1, 1, 1], padding="SAME", name=name)
-        self.__nn = tf.nn.relu(tf.nn.bias_add(self.__nn, b))
-        print("LAYER: %s\tSHAPE: %s" % (name, self.__nn.shape))
+        self.cnn_model = tf.nn.conv3d(self.cnn_model, W, strides=[1, 1, 1, 1, 1], padding="SAME", name=name)
+        self.cnn_model = tf.nn.relu(tf.nn.bias_add(self.cnn_model, b))
+        print("LAYER: %s\tSHAPE: %s" % (name, self.cnn_model.shape))
 
     def __maxpool(self, name, dim):
-        self.__nn = tf.nn.max_pool3d(self.__nn, ksize=dim, strides=dim, padding="SAME", name=name)
-        print("LAYER: %s\tSHAPE: %s" % (name, self.__nn.shape))
+        self.cnn_model = tf.nn.max_pool3d(self.cnn_model, ksize=dim, strides=dim, padding="SAME", name=name)
+        print("LAYER: %s\tSHAPE: %s" % (name, self.cnn_model.shape))
 
     def __fc(self, name, dim, w_name, b_name, activation = True):
         with tf.variable_scope('var_name') as var_scope:
@@ -267,19 +248,19 @@ class Model:
             tf.add_to_collection(tf.GraphKeys.BIASES, b)
 
         if activation:
-            self.__nn = tf.nn.relu(tf.nn.bias_add(tf.matmul(self.__nn, W, name=name), b))
+            self.cnn_model = tf.nn.relu(tf.nn.bias_add(tf.matmul(self.cnn_model, W, name=name), b))
         else:
-            self.__nn = tf.nn.bias_add(tf.matmul(self.__nn, W, name=name), b)
-        print("LAYER: %s\tSHAPE: %s" % (name, self.__nn.shape))
+            self.cnn_model = tf.nn.bias_add(tf.matmul(self.cnn_model, W, name=name), b)
+        print("LAYER: %s\tSHAPE: %s" % (name, self.cnn_model.shape))
 
 
     def __reshape(self, dim):
-        self.__nn = tf.reshape(self.__nn, dim)
+        self.cnn_model = tf.reshape(self.cnn_model, dim)
 
     def __transpose(self, perm):
-        self.__nn = tf.transpose(self.__nn, perm=perm)
+        self.cnn_model = tf.transpose(self.cnn_model, perm=perm)
 
     def __dropout(self, name, prob):
-        self.__nn = tf.nn.dropout(self.__nn, prob, name=name)
-        print("LAYER: %s\tSHAPE: %s" % (name, self.__nn.shape))
+        self.cnn_model = tf.nn.dropout(self.cnn_model, prob, name=name)
+        print("LAYER: %s\tSHAPE: %s" % (name, self.cnn_model.shape))
 
