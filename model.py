@@ -2,21 +2,129 @@
 #date: 03/06/2018
 
 import tensorflow as tf
+import time
 from tensorflow.contrib import layers
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-video = cv2.VideoCapture("./vid/test.avi")
+labels = [
+	"ApplyEyeMakeup",
+	"ApplyLipstick",
+	"Archery",
+	"BabyCrawling",
+	"BalanceBeam",
+	"BandMarching",
+	"BaseballPitch",
+	"Basketball",
+	"BasketballDunk",
+	"BenchPress",
+	"Biking",
+	"Billiards",
+	"BlowDryHair",
+	"BlowingCandles",
+	"BodyWeightSquats",
+	"Bowling",
+	"BoxingPunchingBag",
+	"BoxingSpeedBag",
+	"BreastStroke",
+	"BrushingTeeth",
+	"CleanAndJerk",
+	"CliffDiving",
+	"CricketBowling",
+	"CricketShot",
+	"CuttingInKitchen",
+	"Diving",
+	"Drumming",
+	"Fencing",
+	"FieldHockeyPenalty",
+	"FloorGymnastics",
+	"FrisbeeCatch",
+	"FrontCrawl",
+	"GolfSwing",
+	"Haircut",
+	"Hammering",
+	"HammerThrow",
+	"HandstandPushups",
+	"HandstandWalking",
+	"HeadMassage",
+	"HighJump",
+	"HorseRace",
+	"HorseRiding",
+	"HulaHoop",
+	"IceDancing",
+	"JavelinThrow",
+	"JugglingBalls",
+	"JumpingJack",
+	"JumpRope",
+	"Kayaking",
+	"Knitting",
+	"LongJump",
+	"Lunges",
+	"MilitaryParade",
+	"Mixing",
+	"MoppingFloor",
+	"Nunchucks",
+	"ParallelBars",
+	"PizzaTossing",
+	"PlayingCello",
+	"PlayingDaf",
+	"PlayingDhol",
+	"PlayingFlute",
+	"PlayingGuitar",
+	"PlayingPiano",
+	"PlayingSitar",
+	"PlayingTabla",
+	"PlayingViolin",
+	"PoleVault",
+	"PommelHorse",
+	"PullUps",
+	"Punch",
+	"PushUps",
+	"Rafting",
+	"RockClimbingIndoor",
+	"RopeClimbing",
+	"Rowing",
+	"SalsaSpin",
+	"ShavingBeard",
+	"Shotput",
+	"SkateBoarding",
+	"Skiing",
+	"Skijet",
+	"SkyDiving",
+	"SoccerJuggling",
+	"SoccerPenalty",
+	"StillRings",
+	"SumoWrestling",
+	"Surfing",
+	"Swing",
+	"TableTennisShot",
+	"TaiChi",
+	"TennisSwing",
+	"ThrowDiscus",
+	"TrampolineJumping",
+	"Typing",
+	"UnevenBars",
+	"VolleyballSpiking",
+	"WalkingWithDog",
+	"WallPushups",
+	"WritingOnBoard",
+	"YoYo",
+]
+
+video = cv2.VideoCapture("./vid/test2.avi")
 
 ret, frame = video.read()
+frame = cv2.resize(frame, dsize=(112, 112), interpolation=cv2.INTER_CUBIC)
+print(frame.shape)
 st_video = np.array([frame])
 print("LOADING VIDEO...")
 count = 0
 while video.isOpened():
     count += 1
     ret, frame = video.read()
-    if not ret or count >= 32:
+    frame = cv2.resize(frame, dsize=(112, 112), interpolation=cv2.INTER_CUBIC)
+    if not ret or count >= 10:
         break
     st_video = np.vstack((st_video, [frame]))
 print("LOADED")
@@ -41,9 +149,9 @@ class Model:
 
     def __init__(self, batch_size = 3, **kwargs):
         self.__graph = tf.Graph()
-        self.__CLIP_LENGTH = kwargs.get('clip_length',32)
-        self.__CROP_WIDTH = kwargs.get('crop_width', 320)
-        self.__CROP_HEIGHT = kwargs.get('crop_height', 240)
+        self.__CLIP_LENGTH = kwargs.get('clip_length',10)
+        self.__CROP_WIDTH = kwargs.get('crop_width', 112)
+        self.__CROP_HEIGHT = kwargs.get('crop_height', 112)
         self.dropout_prob = kwargs.get('dropout_prob', 0.6)
         self.num_class = kwargs.get('num_class', 101)
         self.n_step_epoch = int(9537 / batch_size)
@@ -56,42 +164,48 @@ class Model:
             self.lr = tf.train.exponential_decay(1e-4, self.global_step, int(10 * self.n_step_epoch), 1e-1, True)
 
     def run(self):
-        config = tf.ConfigProto()
-        with tf.Session(config=config, graph=self.__graph) as sess:
-            self.__build()
+        with self.__graph.as_default():
+            config = tf.ConfigProto()
+            with tf.Session(config=config, graph=self.__graph) as sess:
+                self.__build()
 
-            softmax_logits = tf.nn.softmax(self.__nn)
-            int_label = tf.placeholder(tf.int64, [3,])
+                # softmax_logits = tf.nn.softmax(self.__nn)
+                # int_label = tf.placeholder(tf.int64, [3,])
+                #
+                # task_loss = tf.reduce_sum(
+                #     tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.__nn, labels=int_label))
+                # acc = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(softmax_logits, axis=-1), int_label), tf.float32))
+                # right_count = tf.reduce_sum(tf.cast(tf.equal(tf.argmax(softmax_logits, axis=1), int_label), tf.int32))
+                #
+                # reg_loss = layers.apply_regularization(layers.l2_regularizer(5e-4),
+                #                                        tf.get_collection(tf.GraphKeys.WEIGHTS))
+                # total_loss = task_loss + reg_loss
+                # # train_var_list = [v for v in tf.trainable_variables() if v.name.find("conv") == -1]
+                # train_op = tf.train.GradientDescentOptimizer(self.lr).minimize(
+                #     total_loss, global_step=self.global_step)
+                # # train_op = tf.train.MomentumOptimizer(self.lr,0.9).minimize(
+                # #     total_loss, global_step = self.global_step,var_list=train_var_list)
 
-            task_loss = tf.reduce_sum(
-                tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.__nn, labels=int_label))
-            acc = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(softmax_logits, axis=-1), int_label), tf.float32))
-            right_count = tf.reduce_sum(tf.cast(tf.equal(tf.argmax(softmax_logits, axis=1), int_label), tf.int32))
+                # total_para = np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])
+                # print('total_para:', total_para)  # all CDC9 :28613120  #pool5 27655936
 
-            reg_loss = layers.apply_regularization(layers.l2_regularizer(5e-4),
-                                                   tf.get_collection(tf.GraphKeys.WEIGHTS))
-            total_loss = task_loss + reg_loss
-            # train_var_list = [v for v in tf.trainable_variables() if v.name.find("conv") == -1]
-            train_op = tf.train.GradientDescentOptimizer(self.lr).minimize(
-                total_loss, global_step=self.global_step)
-            # train_op = tf.train.MomentumOptimizer(self.lr,0.9).minimize(
-            #     total_loss, global_step = self.global_step,var_list=train_var_list)
-
-            total_para = np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])
-            print('total_para:', total_para)  # all CDC9 :28613120  #pool5 27655936
-
-            init = tf.global_variables_initializer()
-            sess.run(init)
-            saver = tf.train.Saver(tf.trainable_variables())
-            saver.restore(sess, PRETRAINED_MODEL_PATH)
-            print("Model Loading Done!")
-            output = sess.run(self.__nn, feed_dict={self.inputs: [st_video]})
-            print("FINISHED!!!")
-            print(output)
-            output = output.T
-            #assert output.shape == (101,10)
-            scores = np.mean(output, axis=1)
-            print(scores.argsort()[-10:][::-1])
+                init = tf.global_variables_initializer()
+                sess.run(init)
+                saver = tf.train.Saver(tf.trainable_variables())
+                saver.restore(sess, PRETRAINED_MODEL_PATH)
+                print("Model Loading Done!")
+                print("INPUT SHAPE: "+ str(self.inputs.shape))
+                print("OUTPUT SHAPE: "+ str(self.__nn.shape))
+                print("VIDEO SHAPE:" + str(np.array([st_video]).shape))
+                softmax_logits = tf.argmax(tf.nn.softmax(self.__nn), axis=1)
+                start = time.time()
+                output = sess.run(softmax_logits, feed_dict={self.inputs: [st_video]})
+                end = time.time()
+                print("FINISHED!!!")
+                print(end-start)
+                print(output)
+                print([labels[o] for o in output])
+                print(output.shape)
 
     def saveModel(self):
         pass
@@ -114,12 +228,14 @@ class Model:
         self.__conv3d('conv5a', [3, 3, 3, 512, 512], 'wc5a', 'bc5a')
         self.__conv3d('conv5b', [3, 3, 3, 512, 512], 'wc5b', 'bc5b')
         self.__maxpool('pool5', [1, 2, 2, 2, 1])
-        self.__reshape([-1, 8192])
+        #self.__transpose([0, 1, 4, 2, 3])
+        self.__reshape([-1, 8192])#8192])
         self.__fc('fc1', [8192, 4096], 'wd1', 'bd1')
         self.__dropout('dropout1', self.dropout_prob)
         self.__fc('fc2', [4096, 4096], 'wd2', 'bd2')
         self.__dropout('dropout2', self.dropout_prob)
         self.__fc('fc3', [4096, self.num_class], 'wout', 'bout', False)
+        print("OUTPUT SHAPE: " + str(self.__nn.shape))
 
         # Loss Function MIL
         # L = l(B_a, B_n) + NORM(M)
@@ -130,36 +246,40 @@ class Model:
         # loss = _max + _smooth + _sparsity
 
     def __conv3d(self, name, dim, w_name, b_name):
-        with self.__graph.as_default():
-            with tf.variable_scope('var_name') as var_scope:
-                W = tf.get_variable(name=w_name, shape=dim, initializer=self.initializer, dtype=tf.float32)
-                b = tf.get_variable(name=b_name, shape=dim[-1], initializer=tf.zeros_initializer(), dtype=tf.float32)
-                tf.add_to_collection(tf.GraphKeys.WEIGHTS, W)
-                tf.add_to_collection(tf.GraphKeys.BIASES, b)
-            self.__nn = tf.nn.conv3d(self.__nn, W, strides=[1, 1, 1, 1, 1], padding="SAME", name=name)
-            self.__nn = tf.nn.relu(tf.nn.bias_add(self.__nn, b))
+        with tf.variable_scope('var_name') as var_scope:
+            W = tf.get_variable(name=w_name, shape=dim, initializer=self.initializer, dtype=tf.float32)
+            b = tf.get_variable(name=b_name, shape=dim[-1], initializer=tf.zeros_initializer(), dtype=tf.float32)
+            tf.add_to_collection(tf.GraphKeys.WEIGHTS, W)
+            tf.add_to_collection(tf.GraphKeys.BIASES, b)
+        self.__nn = tf.nn.conv3d(self.__nn, W, strides=[1, 1, 1, 1, 1], padding="SAME", name=name)
+        self.__nn = tf.nn.relu(tf.nn.bias_add(self.__nn, b))
+        print("LAYER: %s\tSHAPE: %s" % (name, self.__nn.shape))
 
     def __maxpool(self, name, dim):
-        with self.__graph.as_default():
-            self.__nn = tf.nn.max_pool3d(self.__nn, ksize=dim, strides=dim, padding="SAME", name=name)
+        self.__nn = tf.nn.max_pool3d(self.__nn, ksize=dim, strides=dim, padding="SAME", name=name)
+        print("LAYER: %s\tSHAPE: %s" % (name, self.__nn.shape))
 
     def __fc(self, name, dim, w_name, b_name, activation = True):
-        with self.__graph.as_default():
-            with tf.variable_scope('var_name') as var_scope:
-                W = tf.get_variable(name=w_name, shape=dim, initializer=self.initializer, dtype=tf.float32)
-                b = tf.get_variable(name=b_name, shape=dim[-1], initializer=tf.zeros_initializer(), dtype=tf.float32)
-                tf.add_to_collection(tf.GraphKeys.WEIGHTS, W)
-                tf.add_to_collection(tf.GraphKeys.BIASES, b)
+        with tf.variable_scope('var_name') as var_scope:
+            W = tf.get_variable(name=w_name, shape=dim, initializer=self.initializer, dtype=tf.float32)
+            b = tf.get_variable(name=b_name, shape=dim[-1], initializer=tf.zeros_initializer(), dtype=tf.float32)
+            tf.add_to_collection(tf.GraphKeys.WEIGHTS, W)
+            tf.add_to_collection(tf.GraphKeys.BIASES, b)
 
-            if activation:
-                self.__nn = tf.nn.bias_add(tf.matmul(self.__nn, W, name=name), b)
-            else:
-                self.__nn = tf.nn.relu(tf.nn.bias_add(tf.matmul(self.__nn, W, name=name), b))
+        if activation:
+            self.__nn = tf.nn.relu(tf.nn.bias_add(tf.matmul(self.__nn, W, name=name), b))
+        else:
+            self.__nn = tf.nn.bias_add(tf.matmul(self.__nn, W, name=name), b)
+        print("LAYER: %s\tSHAPE: %s" % (name, self.__nn.shape))
+
 
     def __reshape(self, dim):
         self.__nn = tf.reshape(self.__nn, dim)
 
+    def __transpose(self, perm):
+        self.__nn = tf.transpose(self.__nn, perm=perm)
+
     def __dropout(self, name, prob):
-        with self.__graph.as_default():
-            self.__nn = tf.nn.dropout(self.__nn, prob, name=name)
+        self.__nn = tf.nn.dropout(self.__nn, prob, name=name)
+        print("LAYER: %s\tSHAPE: %s" % (name, self.__nn.shape))
 
