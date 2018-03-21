@@ -4,111 +4,6 @@
 import tensorflow as tf
 import time
 from tensorflow.contrib import layers
-import numpy as np
-
-labels = [
-	"ApplyEyeMakeup",
-	"ApplyLipstick",
-	"Archery",
-	"BabyCrawling",
-	"BalanceBeam",
-	"BandMarching",
-	"BaseballPitch",
-	"Basketball",
-	"BasketballDunk",
-	"BenchPress",
-	"Biking",
-	"Billiards",
-	"BlowDryHair",
-	"BlowingCandles",
-	"BodyWeightSquats",
-	"Bowling",
-	"BoxingPunchingBag",
-	"BoxingSpeedBag",
-	"BreastStroke",
-	"BrushingTeeth",
-	"CleanAndJerk",
-	"CliffDiving",
-	"CricketBowling",
-	"CricketShot",
-	"CuttingInKitchen",
-	"Diving",
-	"Drumming",
-	"Fencing",
-	"FieldHockeyPenalty",
-	"FloorGymnastics",
-	"FrisbeeCatch",
-	"FrontCrawl",
-	"GolfSwing",
-	"Haircut",
-	"Hammering",
-	"HammerThrow",
-	"HandstandPushups",
-	"HandstandWalking",
-	"HeadMassage",
-	"HighJump",
-	"HorseRace",
-	"HorseRiding",
-	"HulaHoop",
-	"IceDancing",
-	"JavelinThrow",
-	"JugglingBalls",
-	"JumpingJack",
-	"JumpRope",
-	"Kayaking",
-	"Knitting",
-	"LongJump",
-	"Lunges",
-	"MilitaryParade",
-	"Mixing",
-	"MoppingFloor",
-	"Nunchucks",
-	"ParallelBars",
-	"PizzaTossing",
-	"PlayingCello",
-	"PlayingDaf",
-	"PlayingDhol",
-	"PlayingFlute",
-	"PlayingGuitar",
-	"PlayingPiano",
-	"PlayingSitar",
-	"PlayingTabla",
-	"PlayingViolin",
-	"PoleVault",
-	"PommelHorse",
-	"PullUps",
-	"Punch",
-	"PushUps",
-	"Rafting",
-	"RockClimbingIndoor",
-	"RopeClimbing",
-	"Rowing",
-	"SalsaSpin",
-	"ShavingBeard",
-	"Shotput",
-	"SkateBoarding",
-	"Skiing",
-	"Skijet",
-	"SkyDiving",
-	"SoccerJuggling",
-	"SoccerPenalty",
-	"StillRings",
-	"SumoWrestling",
-	"Surfing",
-	"Swing",
-	"TableTennisShot",
-	"TaiChi",
-	"TennisSwing",
-	"ThrowDiscus",
-	"TrampolineJumping",
-	"Typing",
-	"UnevenBars",
-	"VolleyballSpiking",
-	"WalkingWithDog",
-	"WallPushups",
-	"WritingOnBoard",
-	"YoYo",
-]
 
 PRETRAINED_MODEL_PATH = "./pretrained_models/c3d_ucf101_finetune_whole_iter_20000_TF.model"
 
@@ -123,144 +18,235 @@ class Model:
     https://github.com/hx173149/C3D-tensorflow.
 
     Attributes:
-        likes_spam: A boolean indicating if we like SPAM or not.
-        eggs: An integer count of the eggs we have laid.
+        session:    The active TensorFlow session.
+        net:        The generated TensorFlow neural network we are using for training, testing, and evalutating.
     """
-
-    def __init__(self, batch_size = 3, **kwargs):
+    def __init__(self, **kwargs):
+        """Initializes the model and configures TensorFlow session"""
         self.__graph = tf.Graph()
         self.__CLIP_LENGTH = kwargs.get('clip_length',10)
         self.__CROP_WIDTH = kwargs.get('crop_width', 112)
         self.__CROP_HEIGHT = kwargs.get('crop_height', 112)
-        self.dropout_prob = kwargs.get('dropout_prob', 0.6)
-        self.num_class = kwargs.get('num_class', 101)
-        self.n_step_epoch = int(9537 / batch_size)
+        self.__DROPOUT_PROB = kwargs.get('dropout_prob', 0.6)
+        config = tf.ConfigProto()
+        self.session = tf.Session(config=config, graph=self.__graph)
 
+    def predict(self, video_segments):
+        """Returns an anomaly score based on the given set of video segment.
+
+        Runs a forward propagation on the network, which computes an anomaly score between 0 and 1.
+
+        Args:
+            video_segments: A 5-dimensional Numpy array that has a shape that corresponds to the following: (segments,
+                            frames, width, height, channels). For example, if the method was given 3 video segments,
+                            each with 10 frames, 112x112 RGB resolution, the video segment shape would be:
+                            (3, 10, 112, 112, 3).
+
+        Returns:
+            A numpy array of float values that has a size equal to the given number of segments. For example, if a set
+            of 3 video segments was passed in, the function would return an array of size 3, where each element is an
+            anomaly score of the corresponding video segment.
+        """
         with self.__graph.as_default():
-            self.inputs = tf.placeholder(tf.float32, [None, self.__CLIP_LENGTH, self.__CROP_HEIGHT, self.__CROP_WIDTH, 3])
-            self.cnn_model = self.inputs
-            self.initializer = layers.xavier_initializer()
-            self.global_step = tf.Variable(0, trainable=False, name="global_step")
-            self.lr = tf.train.exponential_decay(1e-4, self.global_step, int(10 * self.n_step_epoch), 1e-1, True)
+            print("Predicting...")
+            start = time.time()
+            output = self.session.run(self.net, feed_dict={self.inputs: video_segments})
+            end = time.time()
+            print("Complete (Elapsed Time: %.3f s)" % (end-start))
+            return output
 
-    def predict(self, sample_segment):
-        with self.__graph.as_default():
-            config = tf.ConfigProto()
-            with tf.Session(config=config, graph=self.__graph) as sess:
-                self.__build()
-
-                # softmax_logits = tf.nn.softmax(self.__nn)
-                # int_label = tf.placeholder(tf.int64, [3,])
-                #
-                # task_loss = tf.reduce_sum(
-                #     tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.__nn, labels=int_label))
-                # acc = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(softmax_logits, axis=-1), int_label), tf.float32))
-                # right_count = tf.reduce_sum(tf.cast(tf.equal(tf.argmax(softmax_logits, axis=1), int_label), tf.int32))
-                #
-                # reg_loss = layers.apply_regularization(layers.l2_regularizer(5e-4),
-                #                                        tf.get_collection(tf.GraphKeys.WEIGHTS))
-                # total_loss = task_loss + reg_loss
-                # # train_var_list = [v for v in tf.trainable_variables() if v.name.find("conv") == -1]
-                # train_op = tf.train.GradientDescentOptimizer(self.lr).minimize(
-                #     total_loss, global_step=self.global_step)
-                # # train_op = tf.train.MomentumOptimizer(self.lr,0.9).minimize(
-                # #     total_loss, global_step = self.global_step,var_list=train_var_list)
-
-                # total_para = np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])
-                # print('total_para:', total_para)  # all CDC9 :28613120  #pool5 27655936
-
-                init = tf.global_variables_initializer()
-                sess.run(init)
-                saver = tf.train.Saver(tf.trainable_variables())
-                saver.restore(sess, PRETRAINED_MODEL_PATH)
-                print("Model Loading Done!")
-                print("INPUT SHAPE: "+ str(self.inputs.shape))
-                print("OUTPUT SHAPE: " + str(self.cnn_model.shape))
-                print("VIDEO SHAPE:" + str(np.array([sample_segment]).shape))
-                softmax_logits = tf.argmax(tf.nn.softmax(self.cnn_model), axis=1)
-                start = time.time()
-                output = sess.run(softmax_logits, feed_dict={self.inputs: [sample_segment]})
-                end = time.time()
-                print("FINISHED!!!")
-                print(end-start)
-                print(output)
-                print([labels[o] for o in output])
-                print(output.shape)
-                return output
-
+    # TODO: Need to implement the save model method
     def saveModel(self):
         pass
 
+    # TODO: Need to implement the load model method
     def loadModel(self):
         pass
 
-    def __build(self):
-        # The C3D CNN Architecture
-        self.__conv3d('conv1', [3, 3, 3, 3, 64], 'wc1', 'bc1')
-        self.__maxpool('pool1', [1, 1, 2, 2, 1])
-        self.__conv3d('conv2', [3, 3, 3, 64, 128], 'wc2', 'bc2')
-        self.__maxpool('pool2', [1, 2, 2, 2, 1])
-        self.__conv3d('conv3a', [3, 3, 3, 128, 256], 'wc3a', 'bc3a')
-        self.__conv3d('conv3b', [3, 3, 3, 256, 256], 'wc3b', 'bc3b')
-        self.__maxpool('pool3', [1, 2, 2, 2, 1])
-        self.__conv3d('conv4a', [3, 3, 3, 256, 512], 'wc4a', 'bc4a')
-        self.__conv3d('conv4b', [3, 3, 3, 512, 512], 'wc4b', 'bc4b')
-        self.__maxpool('pool4', [1, 2, 2, 2, 1])
-        self.__conv3d('conv5a', [3, 3, 3, 512, 512], 'wc5a', 'bc5a')
-        self.__conv3d('conv5b', [3, 3, 3, 512, 512], 'wc5b', 'bc5b')
-        self.__maxpool('pool5', [1, 2, 2, 2, 1])
-        #self.__transpose([0, 1, 4, 2, 3])
-        self.__reshape([-1, 8192])#8192])
-        self.__fc('fc1', [8192, 4096], 'wd1', 'bd1')
-        self.__dropout('dropout1', self.dropout_prob)
-        self.__fc('fc2', [4096, 4096], 'wd2', 'bd2')
-        self.__dropout('dropout2', self.dropout_prob)
-        self.__fc('fc3', [4096, self.num_class], 'wout', 'bout', False)
-        print("OUTPUT SHAPE: " + str(self.cnn_model.shape))
+    def build(self):
+        """Constructs the CNN architecture for the model we are evaluating.
 
-        # Loss Function MIL
-        # L = l(B_a, B_n) + NORM(M)
-        # l(B_a, B_n) = max(0,1-y_pred_a+y_pred_n) + SUM((y_pred_a - y_pred_n)**2) + SUM(y_pred_a)
-        #_max = tf.maximum(np.zeros(), np.ones() - y_pred_a + y_pred_n)
-        #_smooth = tf.
-        #_sparsity = tf.reduce_sum(y_pred_a)
-        # loss = _max + _smooth + _sparsity
+        This method initializes a TensorFlow graph, loads in the pre-trained C3D network, and finally appends a 3 layer
+        neural net to compute an anomaly score. For more information about the architecture please visit:
+        http://crcv.ucf.edu/cchen/.
+        """
+        with self.__graph.as_default():
+            # Initializes and sets up the inputs, weight/bias initializer, and other global variables
+            self.inputs = tf.placeholder(tf.float32, [None,
+                                                      self.__CLIP_LENGTH,
+                                                      self.__CROP_HEIGHT,
+                                                      self.__CROP_WIDTH,
+                                                      3])
+            self.net = self.inputs
+            self.initializer = layers.xavier_initializer()
+            self.global_step = tf.Variable(0, trainable=False, name="global_step")
 
-    def __conv3d(self, name, dim, w_name, b_name):
-        with tf.variable_scope('var_name') as var_scope:
+            # Constructs the C3D network, based on the C3D-Tensorflow implementation of the original model written in
+            # Caffe.
+            self.__conv3d('conv1', [3, 3, 3, 3, 64], 'wc1', 'bc1')
+            self.__maxpool('pool1', [1, 1, 2, 2, 1])
+            self.__conv3d('conv2', [3, 3, 3, 64, 128], 'wc2', 'bc2')
+            self.__maxpool('pool2', [1, 2, 2, 2, 1])
+            self.__conv3d('conv3a', [3, 3, 3, 128, 256], 'wc3a', 'bc3a')
+            self.__conv3d('conv3b', [3, 3, 3, 256, 256], 'wc3b', 'bc3b')
+            self.__maxpool('pool3', [1, 2, 2, 2, 1])
+            self.__conv3d('conv4a', [3, 3, 3, 256, 512], 'wc4a', 'bc4a')
+            self.__conv3d('conv4b', [3, 3, 3, 512, 512], 'wc4b', 'bc4b')
+            self.__maxpool('pool4', [1, 2, 2, 2, 1])
+            self.__conv3d('conv5a', [3, 3, 3, 512, 512], 'wc5a', 'bc5a')
+            self.__conv3d('conv5b', [3, 3, 3, 512, 512], 'wc5b', 'bc5b')
+            self.__maxpool('pool5', [1, 2, 2, 2, 1])
+            self.__reshape([-1, 8192])
+            self.__fc('fc1', [8192, 4096], 'wd1', 'bd1')
+            fc6_layer = self.__dropout('dropout1', self.__DROPOUT_PROB)
+            self.__fc('fc2', [4096, 4096], 'wd2', 'bd2')
+            self.__dropout('dropout2', self.__DROPOUT_PROB)
+            self.c3d_output = self.__fc('fc3', [4096, 101], 'wout', 'bout', False)
+
+            # Initializes all of the weights and biases created so far
+            init = tf.global_variables_initializer()
+            self.session.run(init)
+
+            # Loads in the pre-trained C3D model
+            saver = tf.train.Saver(tf.trainable_variables())
+            saver.restore(self.session, PRETRAINED_MODEL_PATH)
+
+            # Append the anomaly score 3 layer neural net
+            self.net = fc6_layer
+            self.__fc('fc4', [4096, 512], 'wd4', 'bd4', scope="test123")
+            self.__dropout('dropout3', self.__DROPOUT_PROB)
+            self.__fc('fc5', [512, 32], 'wd5', 'bd5', scope="test123")
+            self.__dropout('dropout3', self.__DROPOUT_PROB)
+            self.__bc('fc6', 32, 'wd6', 'bd6', scope="test123")
+
+            # Initialize the weights of the new neural net layers
+            vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='test123')
+            self.session.run(tf.variables_initializer(vars))
+
+            print("Model Loading Done!")
+
+            # TODO: We need to implement the loss function as described in the paper
+            # Loss Function MIL
+            # L = l(B_a, B_n) + NORM(M)
+            # l(B_a, B_n) = max(0,1-y_pred_a+y_pred_n) + SUM((y_pred_a - y_pred_n)**2) + SUM(y_pred_a)
+            #_max = tf.maximum(np.zeros(), np.ones() - y_pred_a + y_pred_n)
+            #_smooth = tf.
+            #_sparsity = tf.reduce_sum(y_pred_a)
+            # loss = _max + _smooth + _sparsity
+
+    def __conv3d(self, name, dim, w_name, b_name, scope='var_name'):
+        """Adds a 3D convolutional neural network layer to the model.
+
+        Args:
+            name:   A string of the name of the newly created layer.
+            dim:    A tuple of the dimensions of the 3D convolutional neural network.
+            w_name: A string of the TensorFlow Variable for the weights
+            b_name: A string of the TensorFlow Variable for the biases
+            scope:  A string of the variable scope. "var_name" refers to the scope of the weights/biases in the
+                    pre-trained model.
+        Returns:
+            The new TensorFlow model that is generated after adding this layer.
+        """
+        with tf.variable_scope(scope) as var_scope:
             W = tf.get_variable(name=w_name, shape=dim, initializer=self.initializer, dtype=tf.float32)
             b = tf.get_variable(name=b_name, shape=dim[-1], initializer=tf.zeros_initializer(), dtype=tf.float32)
             tf.add_to_collection(tf.GraphKeys.WEIGHTS, W)
             tf.add_to_collection(tf.GraphKeys.BIASES, b)
-        self.cnn_model = tf.nn.conv3d(self.cnn_model, W, strides=[1, 1, 1, 1, 1], padding="SAME", name=name)
-        self.cnn_model = tf.nn.relu(tf.nn.bias_add(self.cnn_model, b))
-        print("LAYER: %s\tSHAPE: %s" % (name, self.cnn_model.shape))
+        self.net = tf.nn.conv3d(self.net, W, strides=[1, 1, 1, 1, 1], padding="SAME", name=name)
+        self.net = tf.nn.relu(tf.nn.bias_add(self.net, b))
+        print("LAYER: %s\tSHAPE: %s" % (name, self.net.shape))
+        return self.net
 
     def __maxpool(self, name, dim):
-        self.cnn_model = tf.nn.max_pool3d(self.cnn_model, ksize=dim, strides=dim, padding="SAME", name=name)
-        print("LAYER: %s\tSHAPE: %s" % (name, self.cnn_model.shape))
+        """Adds a max pooling layer to the model.
 
-    def __fc(self, name, dim, w_name, b_name, activation = True):
-        with tf.variable_scope('var_name') as var_scope:
+        Args:
+            name:   A string of the name of the newly created layer.
+            dim:    A tuple of the dimensions of the layer.
+
+        Returns:
+            The new TensorFlow model that is generated after adding this layer.
+        """
+        self.net = tf.nn.max_pool3d(self.net, ksize=dim, strides=dim, padding="SAME", name=name)
+        print("LAYER: %s\tSHAPE: %s" % (name, self.net.shape))
+        return self.net
+
+    def __fc(self, name, dim, w_name, b_name, activation = True, scope='var_name'):
+        """Adds a fully connected layer to the model.
+
+        Args:
+            name:   A string of the name of the newly created layer.
+            dim:    A list of the dimensions of the fully connected layer.
+            w_name: A string of the TensorFlow Variable for the weights
+            b_name: A string of the TensorFlow Variable for the biases
+            scope:  A string of the variable scope. "var_name" refers to the scope of the weights/biases in the
+                    pre-trained model.
+
+        Returns:
+            The new TensorFlow model that is generated after adding this layer.
+        """
+        with tf.variable_scope(scope) as var_scope:
             W = tf.get_variable(name=w_name, shape=dim, initializer=self.initializer, dtype=tf.float32)
             b = tf.get_variable(name=b_name, shape=dim[-1], initializer=tf.zeros_initializer(), dtype=tf.float32)
             tf.add_to_collection(tf.GraphKeys.WEIGHTS, W)
             tf.add_to_collection(tf.GraphKeys.BIASES, b)
 
         if activation:
-            self.cnn_model = tf.nn.relu(tf.nn.bias_add(tf.matmul(self.cnn_model, W, name=name), b))
+            self.net = tf.nn.relu(tf.nn.bias_add(tf.matmul(self.net, W, name=name), b))
         else:
-            self.cnn_model = tf.nn.bias_add(tf.matmul(self.cnn_model, W, name=name), b)
-        print("LAYER: %s\tSHAPE: %s" % (name, self.cnn_model.shape))
+            self.net = tf.nn.bias_add(tf.matmul(self.net, W, name=name), b)
+        print("LAYER: %s\tSHAPE: %s" % (name, self.net.shape))
+        return self.net
 
+    def __bc(self, name, inputs, w_name, b_name, scope='var_name'):
+        """Adds a binary classifier layer to the model.
+
+        This method simply adds a single neural net layer that outputs one value, between 0 and 1. Sigmoid is used as
+        the activation of this layer.
+
+        Args:
+            name:   A string of the name of the newly created layer.
+            inputs: An integer of the number of inputs this layer must take in.
+            w_name: A string of the TensorFlow Variable for the weights
+            b_name: A string of the TensorFlow Variable for the biases
+            scope:  A string of the variable scope. "var_name" refers to the scope of the weights/biases in the
+                    pre-trained model.
+
+        Returns:
+            The new TensorFlow model that is generated after adding this layer.
+        """
+        with tf.variable_scope(scope) as var_scope:
+            W = tf.get_variable(name=w_name, shape=[inputs, 1], initializer=self.initializer, dtype=tf.float32)
+            b = tf.get_variable(name=b_name, shape=1, initializer=tf.zeros_initializer(), dtype=tf.float32)
+            tf.add_to_collection(tf.GraphKeys.WEIGHTS, W)
+            tf.add_to_collection(tf.GraphKeys.BIASES, b)
+        self.net = tf.nn.sigmoid(tf.nn.bias_add(tf.matmul(self.net, W, name=name), b))
+        print("LAYER: %s\tSHAPE: %s" % (name, self.net.shape))
+        return self.net
 
     def __reshape(self, dim):
-        self.cnn_model = tf.reshape(self.cnn_model, dim)
+        """Reshapes the most recent layer's output tensor.
 
-    def __transpose(self, perm):
-        self.cnn_model = tf.transpose(self.cnn_model, perm=perm)
+        Args:
+            dim:    A list used to reshape the network. See TensorFlow documentation for more information.
+
+        Returns:
+            The new TensorFlow model that is generated after adding this layer.
+        """
+        self.net = tf.reshape(self.net, dim)
+        return self.net
 
     def __dropout(self, name, prob):
-        self.cnn_model = tf.nn.dropout(self.cnn_model, prob, name=name)
-        print("LAYER: %s\tSHAPE: %s" % (name, self.cnn_model.shape))
+        """Adds a dropout layer to the neural network.
+
+        Args:
+            name:   A string of the name of the newly created layer.
+            prob:   A float value of the desired probability.
+
+        Returns:
+            The new TensorFlow model that is generated after adding this layer.
+        """
+        self.net = tf.nn.dropout(self.net, prob, name=name)
+        print("LAYER: %s\tSHAPE: %s" % (name, self.net.shape))
+        return self.net
 

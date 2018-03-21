@@ -1,7 +1,5 @@
 import unittest
 
-from tensorflow import Dimension
-
 from model import Model
 import numpy as np
 
@@ -15,20 +13,20 @@ myNewModel = Model()
 class TestModel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        pass
-        #myNewModel.build()
+        myNewModel.build()
 
     def test_build(self):
         input_shape = (None, SEGMENT_FRAMES, SEGMENT_WIDTH, SEGMENT_HEIGHT, SEGMENT_CHANNELS)
         model_input = tuple(myNewModel.inputs.get_shape().as_list())
         self.assertTupleEqual(model_input, input_shape)
 
-        # output_shape = (None, 1)
-        # print(myNewModel.cnn_model.shape)
-        # model_input = tuple(myNewModel.cnn_model.get_shape().as_list())
-        # self.assertTupleEqual(model_input, output_shape)
+        output_shape = (None, 1)
+        print(myNewModel.net.shape)
+        model_input = tuple(myNewModel.net.get_shape().as_list())
+        self.assertTupleEqual(model_input, output_shape)
 
     def test_predict(self):
-        sample_segment = np.zeros((SEGMENT_FRAMES, SEGMENT_WIDTH, SEGMENT_HEIGHT, SEGMENT_CHANNELS))
+        sample_segment = np.zeros((1,SEGMENT_FRAMES, SEGMENT_WIDTH, SEGMENT_HEIGHT, SEGMENT_CHANNELS))
         score = myNewModel.predict(sample_segment)
-        self.assertTupleEqual(score.shape, (1,))
+        self.assertTupleEqual(score.shape, (1,1))
+        self.assertTrue(0.0 <= score[0] and score[0] <= 1.0, "The score %.4f must be between 0 and 1." % (score[0]))
