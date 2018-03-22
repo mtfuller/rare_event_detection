@@ -30,3 +30,4 @@ class TestModel(unittest.TestCase):
         score = myNewModel.predict(sample_segment)
         self.assertTupleEqual(score.shape, (1,1))
         self.assertTrue(0.0 <= score[0] and score[0] <= 1.0, "The score %.4f must be between 0 and 1." % (score[0]))
+        print(score[0])
