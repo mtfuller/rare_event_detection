@@ -140,7 +140,7 @@ class ucsd_dataset(object):
 
 if __name__ == "__main__":
 
-    ped="1"
+    ped="2"
     ucsd = ucsd_dataset(pedestrian=ped)
     # videoName = ""
     # while videoName!="-1":
@@ -151,8 +151,13 @@ if __name__ == "__main__":
     #         ucsd.addVideo(videoLoc,anomalyStatus)
     # print("Exited")
     # train = ucsd.getTraining()
-    ucsd.randomize_data()
+    #ucsd.randomize_data()
     # print(train[0].getFrameCount())
+    # for i in range(12,13):
+    #     videoName = "Test0"+str(i)
+    #     videoName = "dataset/UCSD_Anomaly_Dataset.v1p2/UCSDped2/Test/" + videoName + "/"
+    #     ucsd.addVideo(videoName, "0")
+    ucsd.randomize_data()
 
 
 
