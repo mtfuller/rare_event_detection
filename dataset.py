@@ -11,7 +11,7 @@ Attributes:
 from video import Video
 import os
 import csv
-import numpy
+from random import shuffle
 
 class dataset:
 
@@ -146,7 +146,23 @@ class dataset:
                 Raises:
                     None
         """
+        filename = "dataset/data.csv"
+        if os.path.exists(filename) is False:
+            raise ValueError("dataset doesn't exist")
+        row_list = []
+        with open(filename, 'r') as f:
+            reader = csv.reader(f)
+            next(reader)
+            for row in reader:
+                row_list.append(row)
+        shuffle(row_list)
+        with open(filename, 'w') as f:
+            writer = csv.writer(f)
+            writer.writerow(["Video Location", "is Anomaly"])
+            for i in range(len(row_list)):
+                writer.writerow(row_list[i])
         self.__set_data()
+
 
     def getTraining(self):
         """return training data
@@ -186,7 +202,7 @@ class dataset:
 
 if __name__ == "__main__":
     ds = dataset()
-    #ds.addVideo("SampleVideo_1280x720_1mb.mp4",True)
+    ds.addVideo("SampleVideo_1280x720_1mb.mp4",True)
     #ds.addVideo("big_buck_bunny_720p_5mb.mp4", False)
     #ds.addVideo("SampleVideo_1280x720_2mb.mp4", False)
     #ds.removeVideo("SampleVideo_1280x720_2mb.mp4")
