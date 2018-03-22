@@ -14,6 +14,8 @@ import os
 import csv
 from random import shuffle
 from ucsd_folder import Ucsd_folder
+import matplotlib.pyplot as plt
+
 
 
 class ucsd_dataset(object):
@@ -157,7 +159,11 @@ if __name__ == "__main__":
     #     videoName = "Test0"+str(i)
     #     videoName = "dataset/UCSD_Anomaly_Dataset.v1p2/UCSDped2/Test/" + videoName + "/"
     #     ucsd.addVideo(videoName, "0")
-    ucsd.randomize_data()
+    arr = ucsd.getTraining()
+    sample = arr[0].getFrames()
+    image = sample[0]
+    plt.imshow(image)
+    plt.show()
 
 
 

@@ -34,11 +34,15 @@ class Ucsd_folder(object):
         count = len(os.listdir(dir)) #count list of files inside directory
 
         imageArr=[]
-        for i in range(count):
-            frame="%02d" % i
-            image = cv2.imread(dir+"/"+frame+".tif")
+        for i in range(1,count):
+            frame="%03d.tif" % i
+            loc=os.path.join(dir,frame)
+            #print(loc)
+            image = cv2.imread(loc)
+
+            resize_image = cv2.resize(image, (240, 320))  # 240 width, 320 height
             if image is not None:
-                imageArr.append(image)
+                imageArr.append(resize_image)
 
         self.frames=imageArr
         self.frameCount = len(imageArr)
