@@ -10,6 +10,7 @@ Attributes:
 """
 
 from video import Video
+import numpy as np
 import matplotlib.pyplot as plt
 
 class Bag(object):
@@ -22,12 +23,13 @@ class Bag(object):
 
 
     def __split_data(self):
+        self.bag = []
         vid=self.video
         framesCount=vid.getFrameCount()
         frames = vid.getFrames()
 
         addedFramesCount=0
-        framesInEachSection=int (framesCount/self.split)
+        framesInEachSection = 4 #int (framesCount/self.split)
         for i in range(self.split):
             frameArr=[]
             for j in range(addedFramesCount,addedFramesCount+framesInEachSection):
@@ -72,6 +74,16 @@ class Bag(object):
                     None
         """
         return self.bag
+
+    def getSegments(self):
+        segments = []
+        for segment in self.bag:
+            segments.append(np.array(segment))
+        return segments
+
+    def resize(self, width, height):
+        self.video.resize(width, height)
+        self.__split_data()
 
 if __name__ == "__main__":
     vid = Video("big_buck_bunny_720p_5mb.mp4",False)

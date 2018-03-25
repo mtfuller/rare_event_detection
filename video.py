@@ -12,17 +12,20 @@ Attributes:
 """
 import cv2
 import os
+import numpy as np
 import matplotlib.pyplot as plt
 
 class Video(object):
 
-    def __init__(self, filename,isAnomaly):
+    def __init__(self, filename, isAnomaly, width=320, height=240):
         if filename is None:
             raise ValueError("invalid filename argument")
         self.isAnomaly=isAnomaly
         self.filename = filename
         self.frames=[]
         self.frameCount = 0
+        self.width = width
+        self.height = height
         self.__setFrames()
 
 
@@ -36,7 +39,7 @@ class Video(object):
         if os.path.isdir(dir) is False:
             os.makedirs(dir)
         while success:
-            resize_image = cv2.resize(image,(240,320)) #240 width, 320 height
+            resize_image = cv2.resize(image,(self.width, self.height)) #240 width, 320 height
             cv2.imwrite(dir+"/frame%d.jpg" %count,resize_image)
             success, image = videoSource.read()
             count+=1
@@ -73,7 +76,7 @@ class Video(object):
         self.frameCount = len(imageArr)
 
     def getFrames(self):
-        return self.frames
+        return np.array(self.frames)
 
     def getAnomaly(self):
         return self.isAnomaly
@@ -83,6 +86,9 @@ class Video(object):
 
     def getFrameCount(self):
         return self.frameCount
+
+    def resize(self, new_width, new_height):
+        self.frames = [cv2.resize(frame, (new_width, new_height)) for frame in self.frames]
 
     def __str__(self):
         return "You are print video object, use one of my methods, My filename is "+self.filename

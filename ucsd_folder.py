@@ -5,13 +5,15 @@ import cv2
 
 class Ucsd_folder(object):
 
-    def __init__(self,folderName,isAnomaly):
+    def __init__(self,folderName,isAnomaly, width=320, height=240):
         if folderName is None:
             raise ValueError("invalid filename argument")
         self.isAnomaly = isAnomaly
         self.folderName = folderName
         self.frames = []
         self.frameCount = 0
+        self.width = width
+        self.height = height
         self.__setFrames()
 
 
@@ -40,7 +42,7 @@ class Ucsd_folder(object):
             #print(loc)
             image = cv2.imread(loc)
 
-            resize_image = cv2.resize(image, (240, 320))  # 240 width, 320 height
+            resize_image = cv2.resize(image, (self.width, self.height))  # 240 width, 320 height
             if image is not None:
                 imageArr.append(resize_image)
 
@@ -58,6 +60,9 @@ class Ucsd_folder(object):
 
     def getFrameCount(self):
         return self.frameCount
+
+    def resize(self, new_width, new_height):
+        self.frames = [cv2.resize(frame, (new_width, new_height)) for frame in self.frames]
 
 if __name__ == "__main__":
     obj = Ucsd_folder("dataset/UCSD_Anomaly_Dataset.v1p2/UCSDped1/Test/Test001",0)

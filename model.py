@@ -2,6 +2,7 @@
 #date: 03/06/2018
 
 import tensorflow as tf
+import numpy as np
 import time
 from tensorflow.contrib import layers
 
@@ -24,7 +25,7 @@ class Model:
     def __init__(self, **kwargs):
         """Initializes the model and configures TensorFlow session"""
         self.__graph = tf.Graph()
-        self.__CLIP_LENGTH = kwargs.get('clip_length',10)
+        self.__CLIP_LENGTH = kwargs.get('clip_length',4)
         self.__CROP_WIDTH = kwargs.get('crop_width', 112)
         self.__CROP_HEIGHT = kwargs.get('crop_height', 112)
         self.__DROPOUT_PROB = kwargs.get('dropout_prob', 0.6)
@@ -54,6 +55,15 @@ class Model:
             end = time.time()
             print("Complete (Elapsed Time: %.3f s)" % (end-start))
             return output
+
+    def train(self, positive_bag, negative_bag):
+        with self.__graph.as_default():
+            frames = np.vstack((positive_bag, negative_bag))
+            print("FRAMES SHAPE: %s" % (str(frames.shape)))
+            _, c = self.session.run([self.optimizer, self.loss], feed_dict={
+                self.inputs: frames
+            })
+            return c
 
     # TODO: Need to implement the save model method
     def saveModel(self):
@@ -119,20 +129,27 @@ class Model:
             self.__dropout('dropout3', self.__DROPOUT_PROB)
             self.__bc('fc6', 32, 'wd6', 'bd6', scope="test123")
 
+            with tf.variable_scope('test123') as var_scope:
+                self.video_a = tf.gather(self.net, tf.range(0, 32))
+                self.video_n = tf.gather(self.net, tf.range(32, 64))
+
+                self.max_a = tf.reduce_max(self.video_a)
+                self.max_n = tf.reduce_max(self.video_n)
+
+                lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables()
+                                   if 'bias' not in v.name]) * 0.001
+
+                # TODO: Look into implementing smoothness and sparcity into loss function
+                self.loss = tf.reduce_mean(tf.maximum(0.0, 1 - self.max_a + self.max_n) + lossL2)
+
+                self.optimizer = tf.train.AdamOptimizer(learning_rate=0.001).minimize(self.loss)
+
             # Initialize the weights of the new neural net layers
             vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='test123')
             self.session.run(tf.variables_initializer(vars))
 
-            print("Model Loading Done!")
 
-            # TODO: We need to implement the loss function as described in the paper
-            # Loss Function MIL
-            # L = l(B_a, B_n) + NORM(M)
-            # l(B_a, B_n) = max(0,1-y_pred_a+y_pred_n) + SUM((y_pred_a - y_pred_n)**2) + SUM(y_pred_a)
-            #_max = tf.maximum(np.zeros(), np.ones() - y_pred_a + y_pred_n)
-            #_smooth = tf.
-            #_sparsity = tf.reduce_sum(y_pred_a)
-            # loss = _max + _smooth + _sparsity
+
 
     def __conv3d(self, name, dim, w_name, b_name, scope='var_name'):
         """Adds a 3D convolutional neural network layer to the model.
