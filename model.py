@@ -29,6 +29,8 @@ class Model:
         self.__CROP_WIDTH = kwargs.get('crop_width', 112)
         self.__CROP_HEIGHT = kwargs.get('crop_height', 112)
         self.__DROPOUT_PROB = kwargs.get('dropout_prob', 0.6)
+        self.__NET_LAYERS = kwargs.get('net_layers', ['conv1', 'conv2', 'conv3a', 'conv3b', 'conv4a', 'conv4b',
+                                                      'conv5a', 'conv5b','fc1', 'fc4', 'fc5', 'fc6'])
         config = tf.ConfigProto()
         self.session = tf.Session(config=config, graph=self.__graph)
 
@@ -49,29 +51,32 @@ class Model:
             anomaly score of the corresponding video segment.
         """
         with self.__graph.as_default():
-            print("Predicting...")
             start = time.time()
             output = self.session.run(self.net, feed_dict={self.inputs: video_segments})
             end = time.time()
-            print("Complete (Elapsed Time: %.3f s)" % (end-start))
-            return output
+            return output, (end-start)
 
     def train(self, positive_bag, negative_bag):
         with self.__graph.as_default():
             frames = np.vstack((positive_bag, negative_bag))
-            print("FRAMES SHAPE: %s" % (str(frames.shape)))
             _, c = self.session.run([self.optimizer, self.loss], feed_dict={
-                self.inputs: frames
+                self.inputs: frames,
+                self.prob: self.__DROPOUT_PROB
             })
             return c
 
-    # TODO: Need to implement the save model method
-    def saveModel(self):
-        pass
+    def saveModel(self, export_dir):
+        with self.__graph.as_default():
+            saver0 = tf.train.Saver()
+            saver0.save(self.session, export_dir)
+            saver0.export_meta_graph(export_dir + '.meta')
 
-    # TODO: Need to implement the load model method
-    def loadModel(self):
-        pass
+    def loadModel(self, export_dir):
+        with self.__graph.as_default():
+            new_saver = tf.train.import_meta_graph(export_dir + '.meta')
+            new_saver.restore(self.session, export_dir)
+            self.inputs = self.__graph.get_tensor_by_name("Placeholder:0")
+            self.net = self.__graph.get_tensor_by_name("fc6:0")
 
     def build(self):
         """Constructs the CNN architecture for the model we are evaluating.
@@ -91,6 +96,8 @@ class Model:
             self.initializer = layers.xavier_initializer()
             self.global_step = tf.Variable(0, trainable=False, name="global_step")
 
+            self.prob = tf.placeholder_with_default(1.0, shape=())
+
             # Constructs the C3D network, based on the C3D-Tensorflow implementation of the original model written in
             # Caffe.
             self.__conv3d('conv1', [3, 3, 3, 3, 64], 'wc1', 'bc1')
@@ -108,9 +115,9 @@ class Model:
             self.__maxpool('pool5', [1, 2, 2, 2, 1])
             self.__reshape([-1, 8192])
             self.__fc('fc1', [8192, 4096], 'wd1', 'bd1')
-            fc6_layer = self.__dropout('dropout1', self.__DROPOUT_PROB)
+            fc6_layer = self.__dropout('dropout1', self.prob)
             self.__fc('fc2', [4096, 4096], 'wd2', 'bd2')
-            self.__dropout('dropout2', self.__DROPOUT_PROB)
+            self.__dropout('dropout2', self.prob)
             self.c3d_output = self.__fc('fc3', [4096, 101], 'wout', 'bout', False)
 
             # Initializes all of the weights and biases created so far
@@ -124,12 +131,13 @@ class Model:
             # Append the anomaly score 3 layer neural net
             self.net = fc6_layer
             self.__fc('fc4', [4096, 512], 'wd4', 'bd4', scope="test123")
-            self.__dropout('dropout3', self.__DROPOUT_PROB)
+            self.__dropout('dropout3', self.prob)
             self.__fc('fc5', [512, 32], 'wd5', 'bd5', scope="test123")
-            self.__dropout('dropout3', self.__DROPOUT_PROB)
+            self.__dropout('dropout3', self.prob)
             self.__bc('fc6', 32, 'wd6', 'bd6', scope="test123")
 
             with tf.variable_scope('test123') as var_scope:
+
                 self.video_a = tf.gather(self.net, tf.range(0, 32))
                 self.video_n = tf.gather(self.net, tf.range(32, 64))
 
@@ -171,7 +179,6 @@ class Model:
             tf.add_to_collection(tf.GraphKeys.BIASES, b)
         self.net = tf.nn.conv3d(self.net, W, strides=[1, 1, 1, 1, 1], padding="SAME", name=name)
         self.net = tf.nn.relu(tf.nn.bias_add(self.net, b))
-        print("LAYER: %s\tSHAPE: %s" % (name, self.net.shape))
         return self.net
 
     def __maxpool(self, name, dim):
@@ -185,7 +192,6 @@ class Model:
             The new TensorFlow model that is generated after adding this layer.
         """
         self.net = tf.nn.max_pool3d(self.net, ksize=dim, strides=dim, padding="SAME", name=name)
-        print("LAYER: %s\tSHAPE: %s" % (name, self.net.shape))
         return self.net
 
     def __fc(self, name, dim, w_name, b_name, activation = True, scope='var_name'):
@@ -212,7 +218,6 @@ class Model:
             self.net = tf.nn.relu(tf.nn.bias_add(tf.matmul(self.net, W, name=name), b))
         else:
             self.net = tf.nn.bias_add(tf.matmul(self.net, W, name=name), b)
-        print("LAYER: %s\tSHAPE: %s" % (name, self.net.shape))
         return self.net
 
     def __bc(self, name, inputs, w_name, b_name, scope='var_name'):
@@ -237,8 +242,8 @@ class Model:
             b = tf.get_variable(name=b_name, shape=1, initializer=tf.zeros_initializer(), dtype=tf.float32)
             tf.add_to_collection(tf.GraphKeys.WEIGHTS, W)
             tf.add_to_collection(tf.GraphKeys.BIASES, b)
-        self.net = tf.nn.sigmoid(tf.nn.bias_add(tf.matmul(self.net, W, name=name), b))
-        print("LAYER: %s\tSHAPE: %s" % (name, self.net.shape))
+        self.net = tf.nn.sigmoid(tf.nn.bias_add(tf.matmul(self.net, W), b))
+        self.net = tf.add(self.net, 0, name=name)
         return self.net
 
     def __reshape(self, dim):
@@ -264,6 +269,12 @@ class Model:
             The new TensorFlow model that is generated after adding this layer.
         """
         self.net = tf.nn.dropout(self.net, prob, name=name)
-        print("LAYER: %s\tSHAPE: %s" % (name, self.net.shape))
         return self.net
 
+    def __str__(self):
+        s = ""
+        with self.__graph.as_default():
+            for layer in self.__NET_LAYERS:
+                shape = self.__graph.get_tensor_by_name(layer+":0").shape
+                s += "LAYER: %s\tSHAPE: %s\n" % (layer, shape)
+        return s

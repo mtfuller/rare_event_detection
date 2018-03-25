@@ -20,7 +20,7 @@ Surveillance cameras have become a part of our life. We see them in almost every
 Our project is written mostly in Python, taking advantage of several data science and machine learning libraries such as Numpy, Pandas, Tensorflow, etc.
 
 ### Install dependencies using Anaconda
-Included in the repo is a conda environment file called `environment.yml`. This can be used to install all dependencies for the project. **TODO: Place detailed installation guide to setup project.**
+Included in the repo is a conda environment file called `environment.yml`. This can be used to install all dependencies for the project. First, install Anaconda or Miniconda using this [guide](https://conda.io/docs/user-guide/install/index.html). **Make sure to set your environment vars to use the `conda` command.** Then, simply navigate to the folder and run `conda env create -f environment.yml`. All dependencies should now be installed.
 
 ### Download the C3D Pre-trained Model
 In order to run the application, you will need to download the pre-trained C3D model (~300 MB) and place it in the `/pretrained_models` folder. The pre-trained model is hosted [here](https://www.dropbox.com/s/u5fxqzks2pkaolx/c3d_ucf101_finetune_whole_iter_20000_TF.model?dl=0).
