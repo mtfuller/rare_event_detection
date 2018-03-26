@@ -85,11 +85,11 @@ class Bag(object):
         self.video.resize(width, height)
         self.__split_data()
 
-if __name__ == "__main__":
-    vid = Video("big_buck_bunny_720p_5mb.mp4",False)
-    bagObj=Bag(vid,32)
-    bag=bagObj.getBag()
-    image=bag[31][22]
-    plt.imshow(image)
-    plt.show()
+# if __name__ == "__main__":
+#     vid = Video("big_buck_bunny_720p_5mb.mp4",False)
+#     bagObj=Bag(vid,32)
+#     bag=bagObj.getBag()
+#     image=bag[31][22]
+#     plt.imshow(image)
+#     plt.show()
 

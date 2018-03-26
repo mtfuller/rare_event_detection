@@ -93,14 +93,14 @@ class Video(object):
     def __str__(self):
         return "You are print video object, use one of my methods, My filename is "+self.filename
 
-if __name__ == "__main__":
-     vid = Video("big_buck_bunny_720p_5mb.mp4",False)
-     arr = vid.getFrames()
-     status = vid.getAnomaly()
-     filename = vid.getFilename()
-     print(len(arr))
-     print(status)
-     print(filename)
-     image = arr[0]
-     plt.imshow(image)
-     plt.show()
+# if __name__ == "__main__":
+#      vid = Video("big_buck_bunny_720p_5mb.mp4",False)
+#      arr = vid.getFrames()
+#      status = vid.getAnomaly()
+#      filename = vid.getFilename()
+#      print(len(arr))
+#      print(status)
+#      print(filename)
+#      image = arr[0]
+#      plt.imshow(image)
+#      plt.show()

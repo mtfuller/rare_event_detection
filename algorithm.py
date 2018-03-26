@@ -2,8 +2,6 @@ import random, time
 import numpy as np
 import os
 from model import Model
-import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc
 
 
 class Algorithm:
@@ -72,9 +70,7 @@ class Algorithm:
             predictions.append(max(scores))
         end = time.time()
 
-        FPR, TPR, _ = roc_curve(test_labels, predictions)
-        AUC = auc(FPR, TPR)
-        return FPR, TPR, AUC, (end-start)
+        return test_labels, predictions, (end-start)
 
 
     def save_model(self):

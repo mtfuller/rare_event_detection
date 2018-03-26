@@ -140,30 +140,30 @@ class ucsd_dataset(object):
         self.__set_data()
 
 
-if __name__ == "__main__":
-
-    ped="2"
-    ucsd = ucsd_dataset(pedestrian=ped)
-    # videoName = ""
-    # while videoName!="-1":
-    #     videoName = input("Enter folder name, enter -1 to exit: ")
-    #     anomalyStatus = input("Enter anomaly status(0/1): ")
-    #     videoLoc="dataset/UCSD_Anomaly_Dataset.v1p2/UCSDped"+ped+"/Test/"+videoName+"/"
-    #     if videoName!="-1":
-    #         ucsd.addVideo(videoLoc,anomalyStatus)
-    # print("Exited")
-    # train = ucsd.getTraining()
-    #ucsd.randomize_data()
-    # print(train[0].getFrameCount())
-    # for i in range(12,13):
-    #     videoName = "Test0"+str(i)
-    #     videoName = "dataset/UCSD_Anomaly_Dataset.v1p2/UCSDped2/Test/" + videoName + "/"
-    #     ucsd.addVideo(videoName, "0")
-    arr = ucsd.getTraining()
-    sample = arr[0].getFrames()
-    image = sample[0]
-    plt.imshow(image)
-    plt.show()
+# if __name__ == "__main__":
+#
+#     ped="2"
+#     ucsd = ucsd_dataset(pedestrian=ped)
+#     # videoName = ""
+#     # while videoName!="-1":
+#     #     videoName = input("Enter folder name, enter -1 to exit: ")
+#     #     anomalyStatus = input("Enter anomaly status(0/1): ")
+#     #     videoLoc="dataset/UCSD_Anomaly_Dataset.v1p2/UCSDped"+ped+"/Test/"+videoName+"/"
+#     #     if videoName!="-1":
+#     #         ucsd.addVideo(videoLoc,anomalyStatus)
+#     # print("Exited")
+#     # train = ucsd.getTraining()
+#     #ucsd.randomize_data()
+#     # print(train[0].getFrameCount())
+#     # for i in range(12,13):
+#     #     videoName = "Test0"+str(i)
+#     #     videoName = "dataset/UCSD_Anomaly_Dataset.v1p2/UCSDped2/Test/" + videoName + "/"
+#     #     ucsd.addVideo(videoName, "0")
+#     arr = ucsd.getTraining()
+#     sample = arr[0].getFrames()
+#     image = sample[0]
+#     plt.imshow(image)
+#     plt.show()
 
 
 
