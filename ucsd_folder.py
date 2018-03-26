@@ -42,7 +42,7 @@ class Ucsd_folder(object):
             #print(loc)
             image = cv2.imread(loc)
 
-            resize_image = cv2.resize(image, (self.width, self.height))  # 240 width, 320 height
+            resize_image = cv2.resize(image, (self.width, self.height))
             if image is not None:
                 imageArr.append(resize_image)
 

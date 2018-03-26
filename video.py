@@ -39,7 +39,7 @@ class Video(object):
         if os.path.isdir(dir) is False:
             os.makedirs(dir)
         while success:
-            resize_image = cv2.resize(image,(self.width, self.height)) #240 width, 320 height
+            resize_image = cv2.resize(image,(self.width, self.height))
             cv2.imwrite(dir+"/frame%d.jpg" %count,resize_image)
             success, image = videoSource.read()
             count+=1
