@@ -16,7 +16,7 @@ from random import shuffle
 class dataset:
 
     def __init__(self):
-        
+
         self.training=[]
         self.testing=[]
         self.video=[]
