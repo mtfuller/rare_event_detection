@@ -1,7 +1,8 @@
 import random, time
 import numpy as np
 import os
-from model import Model
+from models.c3d_model import C3DModel
+from models.bc_model import BCModel
 
 
 class Algorithm:
@@ -12,11 +13,9 @@ class Algorithm:
         self.img_height = kwargs.get('img_height', 112)
         self.__split_train()
         self.model_dir = kwargs.get('model_dir', "./models")
-        self.model = Model()
+        self.c3d_model = C3DModel()
+        self.bc_model = BCModel()
         self.iter = 0
-
-    def build(self):
-        self.model.build()
 
     def train(self, **kwargs):
         total_epoch = kwargs.get('total_epoch', 10)

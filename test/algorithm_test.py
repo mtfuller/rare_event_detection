@@ -9,7 +9,6 @@ class TestAlgorithm(unittest.TestCase):
     def setUpClass(cls):
         cls.dataset = ucsd_dataset(pedestrian="2")
         cls.myNewAlgorithm = Algorithm(dataset=cls.dataset, model_dir=MODEL_DIR)
-        cls.myNewAlgorithm.build()
 
     @classmethod
     def tearDownClass(cls):

@@ -156,9 +156,6 @@ class Model:
             vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='test123')
             self.session.run(tf.variables_initializer(vars))
 
-
-
-
     def __conv3d(self, name, dim, w_name, b_name, scope='var_name'):
         """Adds a 3D convolutional neural network layer to the model.
 

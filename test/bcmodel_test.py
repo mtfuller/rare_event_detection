@@ -1,35 +1,34 @@
 import unittest, shutil
 
 from bag import Bag
-from model import Model
 import numpy as np
 
+from models.bc_model import BCModel
 from ucsd_dataset import ucsd_dataset
 
 SEGMENT_WIDTH = 112
 SEGMENT_HEIGHT = 112
-SEGMENT_FRAMES = 4
+SEGMENT_FRAMES = 16
 SEGMENT_CHANNELS = 3
 
 MODEL_PATH = "./models/MODEL_TEST_001"
 MODEL_FILENAME = "/model"
 
-myNewModel = Model()
+myNewModel = BCModel()
 
 class TestModel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        myNewModel.build()
-        sample_segment = np.zeros((1, SEGMENT_FRAMES, SEGMENT_WIDTH, SEGMENT_HEIGHT, SEGMENT_CHANNELS))
+        sample_segment = np.zeros((1, 4096))
         cls.score, time = myNewModel.predict(sample_segment)
-        myNewModel.saveModel(MODEL_PATH + MODEL_FILENAME)
+        myNewModel.save_model(MODEL_PATH + MODEL_FILENAME)
 
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(MODEL_PATH)
 
     def test_build(self):
-        input_shape = (None, SEGMENT_FRAMES, SEGMENT_WIDTH, SEGMENT_HEIGHT, SEGMENT_CHANNELS)
+        input_shape = (None, 4096)
         model_input = tuple(myNewModel.inputs.get_shape().as_list())
         self.assertTupleEqual(model_input, input_shape)
         output_shape = (None, 1)
@@ -37,15 +36,15 @@ class TestModel(unittest.TestCase):
         self.assertTupleEqual(model_input, output_shape)
 
     def test_predict(self):
-        sample_segment = np.zeros((1,SEGMENT_FRAMES, SEGMENT_WIDTH, SEGMENT_HEIGHT, SEGMENT_CHANNELS))
+        sample_segment = np.zeros((1, 4096))
         score, time = myNewModel.predict(sample_segment)
         self.assertTupleEqual(score.shape, (1,1))
         self.assertTrue(0.0 <= score[0] and score[0] <= 1.0, "The score %.4f must be between 0 and 1." % (score[0]))
 
     def test_save_load(self):
         sample_segment = np.zeros((1, SEGMENT_FRAMES, SEGMENT_WIDTH, SEGMENT_HEIGHT, SEGMENT_CHANNELS))
-        myNewModel2 = Model()
-        myNewModel2.loadModel(MODEL_PATH + MODEL_FILENAME)
+        myNewModel2 = BCModel()
+        myNewModel2.load_model(MODEL_PATH + MODEL_FILENAME)
         new_score, time = myNewModel2.predict(sample_segment)
         score = self.__class__.score
         self.assertEqual(new_score, score, "The loaded model predicted %f, but should have predicted %f" % (new_score, score))
