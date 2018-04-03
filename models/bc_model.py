@@ -5,7 +5,7 @@ BC_SHAPE = (None, 4096)
 
 class BCModel(TrainableModel):
     def __init__(self, **kwargs):
-        super().__init__(BC_SHAPE, **kwargs)
+        super().__init__(BC_SHAPE, output_name='fc6', **kwargs)
 
     def build(self):
         with self.graph.as_default():
@@ -17,7 +17,7 @@ class BCModel(TrainableModel):
             self.bc('fc6', 32, 'wd6', 'bd6')
 
             # Segment: (Videos, Segments, Anomaly Score)
-            segment = tf.reshape(self.net, [-1, 32, 1])
+            segment = tf.reshape(self.net, [-1, 11, 1])
 
             # Positive Bag: (Videos, Segments, Anomaly Score)
             # Negative Bag: (Videos, Segments, Anomaly Score)

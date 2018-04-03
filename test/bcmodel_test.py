@@ -4,6 +4,7 @@ from bag import Bag
 import numpy as np
 
 from models.bc_model import BCModel
+from models.c3d_model import C3DModel
 from ucsd_dataset import ucsd_dataset
 
 SEGMENT_WIDTH = 112
@@ -42,7 +43,7 @@ class TestModel(unittest.TestCase):
         self.assertTrue(0.0 <= score[0] and score[0] <= 1.0, "The score %.4f must be between 0 and 1." % (score[0]))
 
     def test_save_load(self):
-        sample_segment = np.zeros((1, SEGMENT_FRAMES, SEGMENT_WIDTH, SEGMENT_HEIGHT, SEGMENT_CHANNELS))
+        sample_segment = np.zeros((1, 4096))
         myNewModel2 = BCModel()
         myNewModel2.load_model(MODEL_PATH + MODEL_FILENAME)
         new_score, time = myNewModel2.predict(sample_segment)
@@ -53,18 +54,25 @@ class TestModel(unittest.TestCase):
         ucsd = ucsd_dataset(pedestrian="2")
         training = ucsd.getTraining()
         positive_bag = negative_bag = None
-
         for video in training:
-            if video.getAnomaly() == '1' and not positive_bag:
-                positive_bag = Bag(video, 32)
-            if video.getAnomaly() == '0'  and not negative_bag:
-                negative_bag = Bag(video, 32)
+            if video.getAnomaly() == '1' and video.getFrameCount() == 179 and not positive_bag:
+                positive_bag = Bag(video, 16)
+            if video.getAnomaly() == '0' and video.getFrameCount() == 179 and not negative_bag:
+                negative_bag = Bag(video, 16)
 
         positive_bag.resize(112, 112)
         negative_bag.resize(112, 112)
 
         positive_bag = positive_bag.getSegments()
+        print(positive_bag.shape)
         negative_bag = negative_bag.getSegments()
+        print(negative_bag.shape)
+
+        c3d = C3DModel()
+        positive_bag, _ = c3d.predict(positive_bag)
+        print(positive_bag.shape)
+        negative_bag, _ = c3d.predict(negative_bag)
+        print(negative_bag.shape)
 
         cost = myNewModel.train(positive_bag, negative_bag)
         self.assertTrue(isinstance(cost, np.float32) and cost > 0.0, "Returned cost value is not valid: %s" % cost)

@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import cv2
 
 
@@ -60,6 +61,15 @@ class Ucsd_folder(object):
 
     def getFrameCount(self):
         return self.frameCount
+
+    def getSegments(self):
+        count = self.getFrameCount()
+        print(count, -(count%16))
+        frames = np.array(self.getFrames()[:-(count%16)])
+        print(frames.shape)
+        segments = frames.reshape([-1, 16, 112, 112, 3])
+        print(segments.shape)
+        return segments
 
     def resize(self, new_width, new_height):
         self.frames = [cv2.resize(frame, (new_width, new_height)) for frame in self.frames]

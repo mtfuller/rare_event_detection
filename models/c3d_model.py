@@ -7,7 +7,7 @@ PRETRAINED_MODEL_PATH = "./models/pretrained_models/c3d_ucf101_finetune_whole_it
 
 class C3DModel(AbstractModel):
     def __init__(self, **kwargs):
-        super().__init__(C3D_INPUT, **kwargs)
+        super().__init__(C3D_INPUT, output_name="fc1", **kwargs)
 
     def build(self):
         # Constructs the C3D network, based on the C3D-Tensorflow implementation of the original model written in

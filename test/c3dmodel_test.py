@@ -12,9 +12,6 @@ SEGMENT_HEIGHT = 112
 SEGMENT_FRAMES = 16
 SEGMENT_CHANNELS = 3
 
-MODEL_PATH = "./models/MODEL_TEST_001"
-MODEL_FILENAME = "/model"
-
 myNewModel = C3DModel()
 
 class TestModel(unittest.TestCase):
@@ -22,10 +19,6 @@ class TestModel(unittest.TestCase):
     def setUpClass(cls):
         sample_segment = np.zeros((1, SEGMENT_FRAMES, SEGMENT_WIDTH, SEGMENT_HEIGHT, SEGMENT_CHANNELS))
         cls.score, time = myNewModel.predict(sample_segment)
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(MODEL_PATH)
 
     def test_build(self):
         input_shape = (None, SEGMENT_FRAMES, SEGMENT_WIDTH, SEGMENT_HEIGHT, SEGMENT_CHANNELS)
@@ -40,4 +33,3 @@ class TestModel(unittest.TestCase):
         score, time = myNewModel.predict(sample_segment)
         self.assertTupleEqual(score.shape, (1,4096))
         self.assertTrue(score[0][0] >= 0.0 and score[0][0] <= 1.0, "The returned score was not normalizized (between 0 & 1).")
-        print(score)

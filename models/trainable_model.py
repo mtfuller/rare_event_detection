@@ -4,7 +4,7 @@ import numpy as np
 
 class TrainableModel(AbstractModel):
     def __init__(self, input_shape, **kwargs):
-        super().__init__(input_shape)
+        super().__init__(input_shape, **kwargs)
 
     def save_model(self, export_dir):
         with self.graph.as_default():
@@ -15,7 +15,6 @@ class TrainableModel(AbstractModel):
     def load_model(self, export_dir, input_name=None, output_name=None):
         input_name = self.input_name if not input_name else input_name
         output_name = self.output_name if not output_name else output_name
-        self.input_name = output_name
         with self.graph.as_default():
             new_saver = tf.train.import_meta_graph(export_dir + '.meta')
             new_saver.restore(self.session, export_dir)

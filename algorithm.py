@@ -3,6 +3,7 @@ import numpy as np
 import os
 from models.c3d_model import C3DModel
 from models.bc_model import BCModel
+from sklearn.metrics import roc_curve, auc
 
 
 class Algorithm:
@@ -12,7 +13,7 @@ class Algorithm:
         self.img_width = kwargs.get('img_width', 112)
         self.img_height = kwargs.get('img_height', 112)
         self.__split_train()
-        self.model_dir = kwargs.get('model_dir', "./models")
+        self.model_dir = kwargs.get('model_dir', "./models/AlgorithmTest")
         self.c3d_model = C3DModel()
         self.bc_model = BCModel()
         self.iter = 0
@@ -29,7 +30,7 @@ class Algorithm:
             begin_epoch = time.time()
             positive_bag = self.__create_bag(self.train_anom)
             negative_bag = self.__create_bag(self.train_norm)
-            cost = self.model.train(positive_bag, negative_bag)
+            cost = self.bc_model.train(positive_bag, negative_bag)
             end_epoch = time.time()
             print("Finished. Cost: %.5f. Time Elapsed: %.5f sec." % (cost,(end_epoch-begin_epoch)))
             cost_curve.append(cost)
@@ -44,39 +45,28 @@ class Algorithm:
     def test(self):
         for video in self.dataset.testing:
             video.resize(self.img_width, self.img_height)
-        test_videos = [video.getFrames() for video in self.dataset.testing]
+        test_videos = [video.getSegments() for video in self.dataset.testing]
         test_labels = [int(video.getAnomaly()) for video in self.dataset.testing]
-
-        bags = []
-        for video in test_videos:
-            bag = []
-            num_of_segments = int(len(video) / 4)
-            frame_index = 0
-            for i in range(num_of_segments):
-                segment = np.array([video[frame_index]])
-                frame_index += 1
-                for j in range(3):
-                    segment = np.vstack((segment, [video[frame_index]]))
-                    frame_index += 1
-                bag.append(segment)
-            bags.append(bag)
 
         predictions = []
         start = time.time()
-        for video in bags:
+        for video in test_videos:
             video = np.array(video)
-            scores, _ = self.model.predict(video)
+            features, _ = self.c3d_model.predict(video)
+            scores, _ = self.bc_model.predict(features)
             predictions.append(max(scores))
         end = time.time()
 
-        return test_labels, predictions, (end-start)
+        _fpr, _tpr, _ = roc_curve(test_labels, predictions)
+        _auc = auc(_fpr, _tpr)
 
+        return _fpr, _tpr, _auc, (end-start)
 
     def save_model(self):
-        self.model.saveModel(self.model_dir + '/model')
+        self.bc_model.save_model(self.model_dir + '/model')
 
-    def load_model(self, dir):
-        self.model.loadModel(dir + '/model')
+    def load_model(self):
+        self.bc_model.load_model(self.model_dir + '/model')
 
     def __split_train(self):
         train = self.dataset.training
@@ -91,8 +81,8 @@ class Algorithm:
 
     def __create_bag(self, video_collection):
         video = random.choice(video_collection)
-        video_frames = video.getFrames()
-        num_of_segments = int(len(video_frames)/4)
+        video_frames = video.getSegments()
+        num_of_segments = len(video_frames)
         frame_index = 0
         bag = []
         for i in range(num_of_segments):
@@ -104,10 +94,9 @@ class Algorithm:
             bag.append(segment)
         return bag
 
-
     def __save_interval(self):
         dir = self.model_dir + "/intervals"
         if not os.path.exists(dir):
             os.makedirs(dir)
-        self.model.saveModel(dir + "/save-" + ("%05d/model"%self.iter))
+        self.bc_model.save_model(dir + "/save-" + ("%05d/model"%self.iter))
         self.iter += 1
