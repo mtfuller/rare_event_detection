@@ -32,8 +32,8 @@ class C3DModel(AbstractModel):
             self.fc('fc2', [4096, 4096], 'wd2', 'bd2')
             self.dropout('dropout2', self.prob)
             self.fc('fc3', [4096, 101], 'wout', 'bout', False)
-            
-            self.net = tf.nn.l2_normalize(final_layer, name=self.output_name)
+
+            self.net = tf.nn.l2_normalize(final_layer, dim=0, name=self.output_name)
 
             # Initializes all of the weights and biases created so far
             init = tf.global_variables_initializer()

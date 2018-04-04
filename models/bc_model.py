@@ -17,7 +17,7 @@ class BCModel(TrainableModel):
             self.bc('fc6', 32, 'wd6', 'bd6')
 
             # Segment: (Videos, Segments, Anomaly Score)
-            segment = tf.reshape(self.net, [-1, 11, 1])
+            segment = tf.reshape(self.net, [-1, 12, 1])
 
             # Positive Bag: (Videos, Segments, Anomaly Score)
             # Negative Bag: (Videos, Segments, Anomaly Score)
@@ -31,9 +31,9 @@ class BCModel(TrainableModel):
             lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables()
                                if 'bias' not in v.name]) * 0.001
 
-            self.loss = tf.reduce_mean(tf.maximum(0.0, 1 - max_positive + max_negative) + lossL2)
+            self.loss = tf.reduce_mean(tf.maximum(0.0, 1 - max_positive + max_negative))# + lossL2)
 
-            self.optimizer = tf.train.AdamOptimizer(learning_rate=0.001).minimize(self.loss)
+            self.optimizer = tf.train.AdamOptimizer(learning_rate=0.0005).minimize(self.loss)
 
             # Initializes all of the weights and biases created so far
             init = tf.global_variables_initializer()

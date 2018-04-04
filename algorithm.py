@@ -28,8 +28,10 @@ class Algorithm:
         for epoch in range(total_epoch):
             print("Training EPOCH #%d..." % (epoch))
             begin_epoch = time.time()
-            positive_bag = self.__create_bag(self.train_anom)
-            negative_bag = self.__create_bag(self.train_norm)
+            positive_bag = self.__create_bags(self.train_anom, 3)
+            negative_bag = self.__create_bags(self.train_norm, 3)
+            positive_bag, _ = self.c3d_model.predict(positive_bag)
+            negative_bag, _ = self.c3d_model.predict(negative_bag)
             cost = self.bc_model.train(positive_bag, negative_bag)
             end_epoch = time.time()
             print("Finished. Cost: %.5f. Time Elapsed: %.5f sec." % (cost,(end_epoch-begin_epoch)))
@@ -57,6 +59,11 @@ class Algorithm:
             predictions.append(max(scores))
         end = time.time()
 
+        print("TRUE LABELS:")
+        print(test_labels)
+        print("PREDICTIONS:")
+        print(predictions)
+
         _fpr, _tpr, _ = roc_curve(test_labels, predictions)
         _auc = auc(_fpr, _tpr)
 
@@ -79,20 +86,16 @@ class Algorithm:
             else:
                 self.train_anom.append(t)
 
-    def __create_bag(self, video_collection):
-        video = random.choice(video_collection)
-        video_frames = video.getSegments()
-        num_of_segments = len(video_frames)
-        frame_index = 0
-        bag = []
-        for i in range(num_of_segments):
-            segment = np.array([video_frames[frame_index]])
-            frame_index += 1
-            for j in range(3):
-                segment = np.vstack((segment, [video_frames[frame_index]]))
-                frame_index += 1
-            bag.append(segment)
-        return bag
+    def __create_bags(self, video_collection, total_bags=1):
+        bags = []
+        for current_bag in range(total_bags):
+            video = random.choice(video_collection)
+            instances = video.getSegments()
+            bags.append(instances)
+        bags = np.vstack(bags)
+        print("BAG SHAPE:")
+        print(bags.shape)
+        return bags
 
     def __save_interval(self):
         dir = self.model_dir + "/intervals"

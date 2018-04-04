@@ -51,29 +51,24 @@ class TestModel(unittest.TestCase):
         self.assertEqual(new_score, score, "The loaded model predicted %f, but should have predicted %f" % (new_score, score))
 
     def test_train(self):
-        ucsd = ucsd_dataset(pedestrian="2")
+        ucsd = ucsd_dataset(pedestrian="1")
         training = ucsd.getTraining()
         positive_bag = negative_bag = None
         for video in training:
-            if video.getAnomaly() == '1' and video.getFrameCount() == 179 and not positive_bag:
+            if video.getAnomaly() == '1' and not positive_bag:
                 positive_bag = Bag(video, 16)
-            if video.getAnomaly() == '0' and video.getFrameCount() == 179 and not negative_bag:
+            if video.getAnomaly() == '0' and not negative_bag:
                 negative_bag = Bag(video, 16)
 
         positive_bag.resize(112, 112)
         negative_bag.resize(112, 112)
 
         positive_bag = positive_bag.getSegments()
-        print(positive_bag.shape)
         negative_bag = negative_bag.getSegments()
-        print(negative_bag.shape)
 
         c3d = C3DModel()
         positive_bag, _ = c3d.predict(positive_bag)
-        print(positive_bag.shape)
         negative_bag, _ = c3d.predict(negative_bag)
-        print(negative_bag.shape)
 
         cost = myNewModel.train(positive_bag, negative_bag)
         self.assertTrue(isinstance(cost, np.float32) and cost > 0.0, "Returned cost value is not valid: %s" % cost)
-

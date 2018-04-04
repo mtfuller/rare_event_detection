@@ -1,3 +1,6 @@
 # Created by .ignore support plugin (hsz.mobi)
 models/pretrained_models/*.model
 .idea/*
+test/__pycache__
+models/__pycache__
+__pycache__
