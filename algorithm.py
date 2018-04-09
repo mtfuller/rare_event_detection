@@ -61,8 +61,10 @@ class Algorithm:
 
         print("TRUE LABELS:")
         print(test_labels)
+        print("SCORES:")
+        print([p[0] for p in predictions])
         print("PREDICTIONS:")
-        print(predictions)
+        print([round(p[0]) for p in predictions])
 
         _fpr, _tpr, _ = roc_curve(test_labels, predictions)
         _auc = auc(_fpr, _tpr)
@@ -93,8 +95,6 @@ class Algorithm:
             instances = video.getSegments()
             bags.append(instances)
         bags = np.vstack(bags)
-        print("BAG SHAPE:")
-        print(bags.shape)
         return bags
 
     def __save_interval(self):

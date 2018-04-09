@@ -43,7 +43,7 @@ class Video(object):
             cv2.imwrite(dir+"/frame%d.jpg" %count,resize_image)
             success, image = videoSource.read()
             count+=1
-        print("Read %d Frames" %count)
+        #print("Read %d Frames" %count)
         return count
 
 
