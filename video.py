@@ -13,7 +13,7 @@ Attributes:
 import cv2
 import os
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 class Video(object):
 
@@ -89,6 +89,15 @@ class Video(object):
 
     def resize(self, new_width, new_height):
         self.frames = [cv2.resize(frame, (new_width, new_height)) for frame in self.frames]
+
+    def getSegments(self):
+        count = self.getFrameCount()
+        #print(count, -(count%16))
+        frames = np.array(self.getFrames()[:-(count%16)])
+        #print(frames.shape)
+        segments = frames.reshape([-1, 16, 112, 112, 3])
+        #print(segments.shape)
+        return segments
 
     def __str__(self):
         return "You are print video object, use one of my methods, My filename is "+self.filename

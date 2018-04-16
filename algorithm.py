@@ -28,11 +28,30 @@ class Algorithm:
         for epoch in range(total_epoch):
             print("Training EPOCH #%d..." % (epoch))
             begin_epoch = time.time()
-            positive_bag = self.__create_bags(self.train_anom, 3)
-            negative_bag = self.__create_bags(self.train_norm, 3)
-            positive_bag, _ = self.c3d_model.predict(positive_bag)
-            negative_bag, _ = self.c3d_model.predict(negative_bag)
-            cost = self.bc_model.train(positive_bag, negative_bag)
+            positive_bag = self.__create_bags(self.train_anom, 1)
+            negative_bag = self.__create_bags(self.train_norm, 1)
+            
+            split_pos = np.array_split(positive_bag, 10)
+            for i in range(len(split_pos)):
+              bag, _ = self.c3d_model.predict(split_pos[i])
+              split_pos[i] = bag
+              
+            split_neg = np.array_split(negative_bag, 10)
+            for i in range(len(split_neg)):
+              bag, _ = self.c3d_model.predict(split_neg[i])
+              split_neg[i] = bag
+            
+            final_pos = np.vstack(split_pos)
+            print("POS: " + str(final_pos.shape))
+            final_pos = final_pos if len(final_pos)%32 == 0 else final_pos[:-(len(final_pos)%32)]
+            print("POS: " + str(final_pos.shape))
+            
+            final_neg = np.vstack(split_neg)
+            print("NEG: " + str(final_neg.shape))
+            final_neg = final_neg if len(final_neg)%32 == 0 else final_neg[:-(len(final_neg)%32)]
+            print("NEG: " + str(final_neg.shape))
+            
+            cost = self.bc_model.train(final_pos, final_neg)
             end_epoch = time.time()
             print("Finished. Cost: %.5f. Time Elapsed: %.5f sec." % (cost,(end_epoch-begin_epoch)))
             cost_curve.append(cost)

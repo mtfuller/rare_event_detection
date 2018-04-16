@@ -4,3 +4,4 @@ models/pretrained_models/*.model
 test/__pycache__
 models/__pycache__
 __pycache__
+dataset

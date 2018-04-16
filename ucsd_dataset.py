@@ -14,7 +14,7 @@ import os
 import csv
 from random import shuffle
 from ucsd_folder import Ucsd_folder
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 
 

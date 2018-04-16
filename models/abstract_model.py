@@ -30,6 +30,7 @@ class AbstractModel:
         """
         with self.graph.as_default():
             start = time.time()
+            print(len(input))
             output = self.session.run(self.net, feed_dict={self.inputs: input})
             end = time.time()
             return output, (end-start)
