@@ -31,7 +31,7 @@ class Video(object):
 
     def __split(self):
         if os.path.exists('dataset/videos/'+self.filename) is False:
-            raise ValueError("Video File Not Found")
+            raise ValueError("Video File Not Found. Could not find: %s" % ('dataset/videos/'+self.filename))
         videoSource = cv2.VideoCapture('dataset/videos/'+self.filename)
         success,image = videoSource.read() #success is true if file exist, and loads first frame in image
         count = 0
@@ -92,11 +92,21 @@ class Video(object):
 
     def getSegments(self):
         count = self.getFrameCount()
-        #print(count, -(count%16))
-        frames = np.array(self.getFrames()[:-(count%16)])
+        print("Getting segments:", count, " total frames.")
+        frames = np.array(self.getFrames())
+        print("FRAMES SHAPE: %s" % (str(frames.shape)))
+        if count % 16 != 0:
+            print("REMOVING FRAMES: %d" % (count%16))
+            frames = frames[:-(count%16)]
         #print(frames.shape)
         segments = frames.reshape([-1, 16, 112, 112, 3])
         #print(segments.shape)
+        
+        print("SEGMENT SHAPE: %s" % (str(segments.shape)))
+        
+#        if segments.shape[0] % 32 != 0:
+#            print("REMOVING SEGMENTS: %d" % (segments.shape[0]%32))
+#            segments = segments[:-(segments.shape[0]%32)]
         return segments
 
     def __str__(self):

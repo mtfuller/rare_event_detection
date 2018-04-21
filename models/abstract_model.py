@@ -1,6 +1,8 @@
 import time
 import tensorflow as tf
+import numpy as np
 from tensorflow.contrib import layers
+import math
 
 DEFAULT_INPUT_NAME = 'input'
 DEFAULT_OUTPUT_NAME = 'output'
@@ -15,7 +17,7 @@ class AbstractModel:
         self.prob = tf.placeholder_with_default(1.0, shape=())
         self.build_model()
 
-    def predict(self, input):
+    def predict(self, _input):
         """Returns an anomaly score based on the given set of video segment.
 
         Runs a forward propagation on the network, which computes an anomaly score between 0 and 1.
@@ -30,8 +32,11 @@ class AbstractModel:
         """
         with self.graph.as_default():
             start = time.time()
-            print(len(input))
-            output = self.session.run(self.net, feed_dict={self.inputs: input})
+            print("INPUT SHAPE: %s" % (str(_input.shape)))
+            input_list = np.array_split(_input, math.ceil(_input.shape[0]/16))
+            for i in range(len(input_list)):
+              input_list[i] = self.session.run(self.net, feed_dict={self.inputs: input_list[i]})
+            output = np.vstack(input_list)
             end = time.time()
             return output, (end-start)
 

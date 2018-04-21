@@ -16,7 +16,7 @@ class BCModel(TrainableModel):
             _, c = self.session.run([self.optimizer, self.loss], feed_dict={
                 self.inputs: frames,
                 self.prob: 0.6,
-                self.pos_neg_bag_split: (len(positive_batch),len(negative_batch))
+                self.pos_neg_bag_split: (len(positive_batch)/32,len(negative_batch)/32)
             })
             return c
 
@@ -35,8 +35,7 @@ class BCModel(TrainableModel):
             # Positive Bag: (Videos, Segments, Anomaly Score)
             # Negative Bag: (Videos, Segments, Anomaly Score)
             self.pos_neg_bag_split = tf.placeholder(tf.int32, (2))
-            p = tf.Print(segment, [tf.shape(segment)], message = 'debug: ')
-            positive_bag, negative_bag = tf.split(p, [32,64], axis=0)
+            positive_bag, negative_bag = tf.split(segment, self.pos_neg_bag_split, axis=0)
 
             # Max Positive: (Videos, Anomaly Score)
             max_positive = tf.reduce_max(positive_bag)

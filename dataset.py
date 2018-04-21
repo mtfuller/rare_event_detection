@@ -118,11 +118,14 @@ class dataset:
                 for row in reader:
                     row_list.append(row)
 
+            count = 0
             for i in range(len(row_list)):
+                count += 1
                 filename = os.path.basename(row_list[i][0])
                 anomaly = os.path.basename(row_list[i][1])
-                vid = Video(filename,anomaly)
-                self.video.append(vid)
+                #print("Loading video: %s (%d of %d)..." % (filename, count, len(row_list)))
+                #vid = Video(filename,anomaly)
+                self.video.append((filename, anomaly))
 
             #numpy.random.shuffle(self.video)
             training = []
@@ -200,47 +203,47 @@ class dataset:
         """
         return self.video
 
-if __name__ == "__main__":
-    ds = dataset()
-    ds.addVideo("SampleVideo_1280x720_1mb.mp4",True)
+#if __name__ == "__main__":
+#    ds = dataset()
+#    ds.addVideo("SampleVideo_1280x720_1mb.mp4",True)
     #ds.addVideo("big_buck_bunny_720p_5mb.mp4", False)
     #ds.addVideo("SampleVideo_1280x720_2mb.mp4", False)
     #ds.removeVideo("SampleVideo_1280x720_2mb.mp4")
     #ds.removeVideo("SampleVideo_1280x720_1mb.mp4")
     #ds.removeVideo("big_buck_bunny_720p_5mb.mp4")
-    training = ds.getTraining()
-    testing = ds.getTesting()
-    if(len(training)>0):
+#    training = ds.getTraining()
+#    testing = ds.getTesting()
+#    if(len(training)>0):
 
-        vid = training[0]
-        filename = vid.getFilename()
-        frames = vid.getFrames()
-        frameC = vid.getFrameCount()
-        anomaly = vid.getAnomaly()
-        print("Total Objects in Training Data: %d" %len(training))
-        print("First object in Training Data")
-        print("Filename: " + filename)
-        print("Frames Count: %d" %frameC)
-        print("Anomaly Status: " + anomaly)
-        for i in range(len(training)):
-            print(training[i])
+#        vid = training[0]
+#        filename = vid.getFilename()
+#        frames = vid.getFrames()
+#        frameC = vid.getFrameCount()
+#        anomaly = vid.getAnomaly()
+#        print("Total Objects in Training Data: %d" %len(training))
+#        print("First object in Training Data")
+#        print("Filename: " + filename)
+#        print("Frames Count: %d" %frameC)
+#        print("Anomaly Status: " + anomaly)
+#        for i in range(len(training)):
+#            print(training[i])
 
-    print("--- \t --- \t --- \t ---")
+#    print("--- \t --- \t --- \t ---")
 
-    if(len(testing)>0):
-        vid = testing[0]
-        filename = vid.getFilename()
-        frames = vid.getFrames()
-        frameC = vid.getFrameCount()
-        anomaly = vid.getAnomaly()
-        print("Total Objects in Testing Data: %d" % len(testing))
-        print("First object in Testing Data")
-        print("Filename: " + filename)
-        print("Frames Count: %d" %frameC)
-        print("Anomaly Status: " + anomaly)
+#    if(len(testing)>0):
+#        vid = testing[0]
+#        filename = vid.getFilename()
+#        frames = vid.getFrames()
+#        frameC = vid.getFrameCount()
+#        anomaly = vid.getAnomaly()
+#        print("Total Objects in Testing Data: %d" % len(testing))
+#        print("First object in Testing Data")
+#        print("Filename: " + filename)
+#        print("Frames Count: %d" %frameC)
+#        print("Anomaly Status: " + anomaly)
 
-        for i in range(len(testing)):
-            print(testing[i])
+#        for i in range(len(testing)):
+#            print(testing[i])
 
     #ds.removeVideo("SampleVideo_1280x720_2mb.mp4")
     #ds.removeVideo("SampleVideo_1280x720_1mb.mp4")
