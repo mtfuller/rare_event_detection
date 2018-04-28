@@ -73,7 +73,3 @@ class Ucsd_folder(object):
 
     def resize(self, new_width, new_height):
         self.frames = [cv2.resize(frame, (new_width, new_height)) for frame in self.frames]
-
-# if __name__ == "__main__":
-#     obj = Ucsd_folder("dataset/UCSD_Anomaly_Dataset.v1p2/UCSDped1/Test/Test001",0)
-#     print(obj.getFrameCount())

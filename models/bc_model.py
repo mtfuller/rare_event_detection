@@ -9,6 +9,8 @@ class BCModel(TrainableModel):
         super().__init__(BC_SHAPE, output_name='fc6', **kwargs)
 
     def train(self, positive_batch, negative_batch):
+        """Train the model using the positive and negative batch
+        """
         with self.graph.as_default():
             print("PRINTING BATCHES: (%s, %s)" % (len(positive_batch),len(negative_batch)))
             frames = np.vstack((positive_batch, negative_batch))

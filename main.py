@@ -1,23 +1,20 @@
 from algorithm import Algorithm
-from dataset import dataset
-
+from _dataset import dataset
 TOTAL_EPOCHS = 1000
 
 def main():
+    # Load dataset
     ds = dataset()
 
+    # Initialize algorithm
     algorithm = Algorithm(dataset=ds, model_dir="./models/UCF_Train")
 
-    #print("Testing initial model...")
-    #fpr, tpr, auc1, time = algorithm.test()
-    #print("FPR: " + str(fpr))
-    #print("TPR: " + str(tpr))
-    #print("Done. AUC:%f Elapsed Time: %.5f sec" % (auc1, time))
-
+    # Train the model
     print("Training model...")
     cost_curve, time = algorithm.train(total_epoch=TOTAL_EPOCHS, save_interval=200)
     print("Done. Elapsed Time: %.5f sec" % (time))
 
+    # Test the model and display results
     print("Testing trained model...")
     fpr, tpr, auc2, time = algorithm.test()
     print("FPR: " + str(fpr))

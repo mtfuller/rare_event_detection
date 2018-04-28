@@ -98,28 +98,11 @@ class Video(object):
         if count % 16 != 0:
             print("REMOVING FRAMES: %d" % (count%16))
             frames = frames[:-(count%16)]
-        #print(frames.shape)
+
         segments = frames.reshape([-1, 16, 112, 112, 3])
-        #print(segments.shape)
         
         print("SEGMENT SHAPE: %s" % (str(segments.shape)))
-        
-#        if segments.shape[0] % 32 != 0:
-#            print("REMOVING SEGMENTS: %d" % (segments.shape[0]%32))
-#            segments = segments[:-(segments.shape[0]%32)]
         return segments
 
     def __str__(self):
         return "You are print video object, use one of my methods, My filename is "+self.filename
-
-# if __name__ == "__main__":
-#      vid = Video("big_buck_bunny_720p_5mb.mp4",False)
-#      arr = vid.getFrames()
-#      status = vid.getAnomaly()
-#      filename = vid.getFilename()
-#      print(len(arr))
-#      print(status)
-#      print(filename)
-#      image = arr[0]
-#      plt.imshow(image)
-#      plt.show()

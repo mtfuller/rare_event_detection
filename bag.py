@@ -23,6 +23,8 @@ class Bag(object):
 
 
     def __split_data(self):
+        """Splits the video data into frames
+        """
         self.bag = []
         vid=self.video
         framesCount=vid.getFrameCount()
@@ -36,9 +38,6 @@ class Bag(object):
                 frameArr.append(frames[j])
             self.bag.append(frameArr)
             addedFramesCount=addedFramesCount+framesInEachSection
-        #print("Frames in each segment: %d" %len(self.bag[0]))
-        #print("Total Frames Added: %d" %addedFramesCount)
-        #print("Out of %d Total Frames in the video" %framesCount)
 
 
 
@@ -76,19 +75,15 @@ class Bag(object):
         return self.bag
 
     def getSegments(self):
+        """Returns a collection of 16-frame segments from the video
+        """
         count = self.video.getFrameCount()
         frames = np.array(self.video.getFrames()[:-(count%16)])
         segments = frames.reshape([-1, 16, 112, 112, 3])
         return segments
 
     def resize(self, width, height):
+        """Resizes the video to the new width and height
+        """
         self.video.resize(width, height)
         self.__split_data()
-
-# if __name__ == "__main__":
-#     vid = Video("big_buck_bunny_720p_5mb.mp4",False)
-#     bagObj=Bag(vid,32)
-#     bag=bagObj.getBag()
-#     image=bag[31][22]
-#     plt.imshow(image)
-#     plt.show()

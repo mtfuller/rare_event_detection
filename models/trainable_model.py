@@ -8,11 +8,15 @@ class TrainableModel(AbstractModel):
         super().__init__(input_shape, **kwargs)
 
     def save_model(self, export_dir):
+        """Saves the current state of the model
+        """
         with self.graph.as_default():
             saver0 = tf.train.Saver()
             saver0.save(self.session, export_dir)
 
     def load_model(self, export_dir, input_name=None, output_name=None):
+        """Loads the saved model from the given export_dir
+        """
         input_name = self.input_name if not input_name else input_name
         output_name = self.output_name if not output_name else output_name
         with self.graph.as_default():
@@ -22,6 +26,8 @@ class TrainableModel(AbstractModel):
             self.net = self.graph.get_tensor_by_name(output_name + ":0")
 
     def train(self, positive_batch, negative_batch):
+        """Train the model using the positive and negative batch
+        """
         with self.graph.as_default():
             frames = np.vstack((positive_batch, negative_batch))
             _, c = self.session.run([self.optimizer, self.loss], feed_dict={

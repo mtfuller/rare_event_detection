@@ -10,9 +10,9 @@ Surveillance cameras have become a part of our life. We see them in almost every
  - [x] Design class structure and interfaces
  - [x] Select algorithm/model to implement
  - [x] Select the dataset we will work with
- - [ ] Implement the algorithm/model chosen
- - [ ] Prepare the dataset
- - [ ] Perform training/testing on model
+ - [X] Implement the algorithm/model chosen
+ - [X] Prepare the dataset
+ - [X] Perform training/testing on model
  - [ ] Hyper-parameterize/optimize the model
  - [ ] Final evaluation and analysis of the model
 
